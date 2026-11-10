@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+
+# Original logo drafts (the chosen one is kept in docs/brand/logo-source.png)
+/image.png
+/image_2.png
+/image._3png.png
