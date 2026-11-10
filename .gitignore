@@ -9,3 +9,4 @@ dist/
 /image.png
 /image_2.png
 /image._3png.png
+*.tsbuildinfo
