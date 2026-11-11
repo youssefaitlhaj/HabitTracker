@@ -41,6 +41,7 @@ export interface ProfileRepository {
   update(patch: ProfilePatch): Promise<void>;
   setAvatar(file: File | null): Promise<void>;
   markExported(at: string): Promise<void>;
+  /** Deletes the account now, or schedules it (see BackendCapabilities.deletionGraceDays). */
   requestDeletion(): Promise<void>;
   /** Clears a pending deletion. Resolves true when one was cancelled. */
   cancelDeletion(): Promise<boolean>;
@@ -79,8 +80,17 @@ export interface Repositories {
   snapshots: SnapshotRepository;
 }
 
+/** What a backend can do, so screens only offer what actually works. */
+export interface BackendCapabilities {
+  /** Can end sessions on other devices. */
+  globalSignOut: boolean;
+  /** Days before a deletion request removes the account; 0 means it is removed at once. */
+  deletionGraceDays: number;
+}
+
 export interface Backend {
-  kind: 'supabase' | 'local';
+  kind: 'firebase' | 'supabase' | 'local';
+  capabilities: BackendCapabilities;
   auth: AuthService;
   repositoriesFor(session: Session): Repositories;
 }

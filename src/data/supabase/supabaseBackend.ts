@@ -227,6 +227,7 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
   });
   return {
     kind: 'supabase',
+    capabilities: { globalSignOut: true, deletionGraceDays: 7 },
     auth: new SupabaseAuth(db),
     repositoriesFor(session: Session): Repositories {
       const habits = new SupabaseHabits(db, session);

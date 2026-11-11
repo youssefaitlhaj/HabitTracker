@@ -14,6 +14,7 @@ import type {
   SignUpInput,
   SnapshotRepository,
 } from '../ports';
+import { avatarDataUrl } from '@/lib/image';
 import { hashPassword, LocalStore, type LocalUserDoc } from './localStore';
 import type { Checkin, Habit, Note, Profile, Snapshot } from '@/domain/types';
 
@@ -158,7 +159,7 @@ class LocalProfiles extends LocalRepository implements ProfileRepository {
   }
 
   async setAvatar(file: File | null): Promise<void> {
-    const avatarUrl = file ? await readAsDataUrl(file) : null;
+    const avatarUrl = file ? await avatarDataUrl(file) : null;
     return this.change((d) => ({ ...d, avatarUrl }));
   }
 
@@ -236,18 +237,10 @@ class LocalSnapshots extends LocalRepository implements SnapshotRepository {
   }
 }
 
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error('Could not read the image.'));
-    reader.readAsDataURL(file);
-  });
-}
-
 export function createLocalBackend(store = new LocalStore()): Backend {
   return {
     kind: 'local',
+    capabilities: { globalSignOut: false, deletionGraceDays: 7 },
     auth: new LocalAuth(store),
     repositoriesFor(session: Session): Repositories {
       return {

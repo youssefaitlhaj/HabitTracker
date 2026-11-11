@@ -12,7 +12,8 @@ import { SettingsCard } from './SettingsPage';
 const CONFIRM_WORD = 'DELETE';
 
 export function AccountTab() {
-  const { auth } = useBackend();
+  const { auth, capabilities } = useBackend();
+  const grace = capabilities.deletionGraceDays;
   const { repos } = useRepos();
   const toast = useToast();
   const [confirm, setConfirm] = useState('');
@@ -41,8 +42,10 @@ export function AccountTab() {
     setDeleting(true);
     try {
       await repos.profiles.requestDeletion();
-      await auth.signOut('global');
-      toast.show('Account scheduled for deletion in 7 days. Log in before then to cancel.', { kind: 'warning' });
+      await auth.signOut(capabilities.globalSignOut ? 'global' : 'local');
+      toast.show(grace ? `Account scheduled for deletion in ${grace} days. Log in before then to cancel.` : 'Your account and all its data were deleted.', {
+        kind: 'warning',
+      });
     } catch (error) {
       toast.show(errorText(error), { kind: 'error' });
       setDeleting(false);
@@ -62,11 +65,13 @@ export function AccountTab() {
         </form>
       </SettingsCard>
 
-      <SettingsCard title="Sessions" titleId="sessions-h" description="Sign out here, or everywhere you’re logged in.">
+      <SettingsCard title="Sessions" titleId="sessions-h" description={capabilities.globalSignOut ? 'Sign out here, or everywhere you’re logged in.' : 'Sign out of Ledger on this device.'}>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => signOut('global')}>
-            Sign out everywhere
-          </Button>
+          {capabilities.globalSignOut && (
+            <Button variant="secondary" onClick={() => signOut('global')}>
+              Sign out everywhere
+            </Button>
+          )}
           <Button variant="dark" icon="logout" onClick={() => signOut('local')}>
             Sign out
           </Button>
@@ -77,7 +82,11 @@ export function AccountTab() {
         tone="danger"
         title="Delete account"
         titleId="delete-h"
-        description="Your account and all data are deleted after 7 days. Log in before then to cancel. Export your data first if you want a copy."
+        description={
+          grace
+            ? `Your account and all data are deleted after ${grace} days. Log in before then to cancel. Export your data first if you want a copy.`
+            : 'Your account and all data are deleted right away and can’t be recovered. Export your data first if you want a copy.'
+        }
       >
         <div className="flex flex-wrap items-end gap-2.5">
           <Field label={`Type ${CONFIRM_WORD} to confirm`} className="min-w-[220px] flex-1">

@@ -7,8 +7,12 @@ import { createRoot } from 'react-dom/client';
 import { App } from '@/app/App';
 import { createBackend } from '@/data/backend';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App backend={createBackend()} />
-  </StrictMode>,
+const root = createRoot(document.getElementById('root')!);
+
+createBackend().then((backend) =>
+  root.render(
+    <StrictMode>
+      <App backend={backend} />
+    </StrictMode>,
+  ),
 );

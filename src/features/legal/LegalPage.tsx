@@ -11,8 +11,8 @@ const CONTENT = {
     title: 'Privacy policy',
     sections: [
       ['What we store', `Your name, email address, time zone, habits, check-ins, notes and settings. Optionally a profile photo.`],
-      ['Where it is stored', `With our database provider (Supabase), in the EU. Only you can read your data.`],
-      ['Your rights', `Export everything as JSON from Settings › Data at any time. Delete your account from Settings › Account; all data is removed after 7 days.`],
+      ['Where it is stored', `With our database provider [PROVIDER AND REGION]. Only you can read your data.`],
+      ['Your rights', `Export everything as JSON from Settings › Data at any time. Delete your account and all its data from Settings › Account.`],
       ['Contact', `[OWNER CONTACT EMAIL]`],
     ],
   },
