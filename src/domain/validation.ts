@@ -12,6 +12,14 @@ export function passwordError(value: string): string | undefined {
   return value.length >= PASSWORD_MIN ? undefined : `Use at least ${PASSWORD_MIN} characters.`;
 }
 
+/** Errors for a "new password + confirm" pair, optionally checked against the current one. */
+export function newPasswordErrors(next: string, confirm: string, current?: string): { next?: string; confirm?: string } {
+  return {
+    next: passwordError(next) ?? (current !== undefined && next === current ? 'Choose a password different from your current one.' : undefined),
+    confirm: confirm === next ? undefined : 'The passwords don’t match.',
+  };
+}
+
 export function requiredError(value: string, message: string): string | undefined {
   return value.trim() ? undefined : message;
 }

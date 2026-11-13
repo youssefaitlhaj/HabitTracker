@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import type { Backend } from '@/data/ports';
+import { AuthActionPage } from '@/features/auth/AuthActionPage';
 import { LoginPage, ResetPasswordPage, SignupPage, UpdatePasswordPage } from '@/features/auth/AuthPages';
 import { HabitDetailPage } from '@/features/habits/HabitDetailPage';
 import { HabitsPage } from '@/features/habits/HabitsPage';
@@ -29,6 +30,7 @@ export function App({ backend }: { backend: Backend }) {
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/update-password" element={<UpdatePasswordPage />} />
+                <Route path="/auth/action" element={<AuthActionPage />} />
                 <Route path="/privacy" element={<LegalPage kind="privacy" />} />
                 <Route path="/terms" element={<LegalPage kind="terms" />} />
                 <Route path="/welcome" element={<RequireAuth><OnboardingPage /></RequireAuth>} />

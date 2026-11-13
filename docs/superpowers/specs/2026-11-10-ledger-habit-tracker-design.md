@@ -122,7 +122,8 @@ All text meets WCAG AA contrast (4.5:1, or 3:1 at 24 px+). Text on heat 3–4 us
 
 - Sign up: name, email, password (≥ 8 characters, strength bar), accept terms (links to the Terms and Privacy pages). Supabase sends a confirmation email; the user can't log in until confirmed.
 - Log in, "Keep me signed in" (unticked = session ends when the browser closes), log out, forgot password → email link → set new password.
-- Settings › Account: change password, sign out everywhere, delete account.
+- Settings › Account: change password (current password, new password, confirm new password; the current one is checked first; a "Forgot your current password?" link emails a reset link), sign out everywhere, delete account.
+- Email links (reset password, confirm email, change email) open Ledger's own `/auth/action` page; the reset page asks for the new password twice (added 2026-11-13).
 - **Delete account**: type `DELETE` to enable the button. The account is marked for deletion and the user is signed out. Logging in within 7 days cancels it. After 7 days a scheduled job removes the auth user and all their data and files.
 - Change email: Supabase's email-change confirmation flow; until it's confirmed, the old email stays active.
 - Every user's data is private. Enforce this with database row-level security, not just in the UI.

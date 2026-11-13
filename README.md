@@ -23,7 +23,7 @@ Without any keys the app runs in **demo mode**: accounts and data live only in t
 4. **Build › Firestore Database › Create database**: production mode, location `eur3 (europe-west)` or the one nearest you. Then open the **Rules** tab, paste the contents of [`firestore.rules`](firestore.rules) and click **Publish**.
 5. **Project settings › General › Your apps**: add a **Web app** (`</>`) and copy `apiKey`, `authDomain`, `projectId` and `appId`.
 6. In **Vercel › Settings › Environment Variables**, add `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID` and `VITE_FIREBASE_APP_ID`. Then **redeploy**: the keys are built in at build time.
-7. Optional: under **Authentication › Templates**, set the sender name of the confirmation and reset emails to "Ledger".
+7. **Authentication › Templates**: open any template, click the pencil next to the template name, choose **Customize action URL**, and enter `https://your-app.vercel.app/auth/action`. Email links (reset password, confirm email, change email) then open Ledger's own pages instead of Firebase's plain ones. You can also set the sender name to "Ledger" there.
 
 On the free plan, deleting an account removes it immediately (there are no scheduled jobs), profile photos are stored as small 256 px images inside the profile, and "Sign out everywhere" is hidden.
 

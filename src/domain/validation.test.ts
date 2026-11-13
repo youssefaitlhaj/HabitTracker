@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emailError, passwordError, passwordStrength } from './validation';
+import { emailError, newPasswordErrors, passwordError, passwordStrength } from './validation';
 
 describe('validation', () => {
   it('checks emails and password length', () => {
@@ -7,6 +7,13 @@ describe('validation', () => {
     expect(emailError('sam@')).toMatch(/valid email/);
     expect(passwordError('short')).toMatch(/8 characters/);
     expect(passwordError('long enough')).toBeUndefined();
+  });
+
+  it('checks the new password, its confirmation, and that it differs from the current one', () => {
+    expect(newPasswordErrors('Whisky&Oat1', 'Whisky&Oat1')).toEqual({ next: undefined, confirm: undefined });
+    expect(newPasswordErrors('Whisky&Oat1', 'Whisky&Oat2').confirm).toMatch(/don’t match/);
+    expect(newPasswordErrors('short', 'short').next).toMatch(/8 characters/);
+    expect(newPasswordErrors('Whisky&Oat1', 'Whisky&Oat1', 'Whisky&Oat1').next).toMatch(/different/);
   });
 
   it('scores password strength', () => {

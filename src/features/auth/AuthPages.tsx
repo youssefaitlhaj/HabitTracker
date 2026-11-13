@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { detectTimeZone } from '@/domain/date';
-import { emailError, passwordError, requiredError } from '@/domain/validation';
+import { emailError, newPasswordErrors, passwordError, requiredError } from '@/domain/validation';
 import { useBackend, useSession } from '@/state/session';
 import { useForm } from '@/state/useForm';
 import { Banner } from '@/ui/Banner';
@@ -9,6 +9,7 @@ import { Button } from '@/ui/Button';
 import { Field, TextInput } from '@/ui/Field';
 import { useToast } from '@/ui/Toast';
 import { AuthLayout } from './AuthLayout';
+import { NewPasswordFields } from './NewPasswordFields';
 import { PasswordInput } from './PasswordInput';
 
 function Checkbox({ checked, onChange, children }: { checked: boolean; onChange: (v: boolean) => void; children: React.ReactNode }) {
@@ -162,10 +163,10 @@ export function UpdatePasswordPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const form = useForm(
-    { password: '' },
-    (v) => ({ password: passwordError(v.password) }),
+    { next: '', confirm: '' },
+    (v) => newPasswordErrors(v.next, v.confirm),
     async (v) => {
-      await auth.updatePassword(v.password);
+      await auth.updatePassword(v.next);
       toast.show('Password updated.', { kind: 'success' });
       navigate('/', { replace: true });
     },
@@ -178,9 +179,7 @@ export function UpdatePasswordPage() {
         </Banner>
       ) : (
         <form noValidate onSubmit={form.onSubmit} className="flex flex-col gap-4">
-          <Field label="New password" error={form.errors.password}>
-            {(c) => <PasswordInput id={c.id} describedBy={c.describedBy} invalid={c.invalid} autoComplete="new-password" showStrength value={form.values.password} onChange={form.set('password')} />}
-          </Field>
+          <NewPasswordFields values={form.values} errors={form.errors} onNext={form.set('next')} onConfirm={form.set('confirm')} />
           <Button type="submit" size="lg" block loading={form.busy}>
             Save password
           </Button>

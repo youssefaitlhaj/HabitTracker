@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { passwordError } from '@/domain/validation';
+import { newPasswordErrors, requiredError } from '@/domain/validation';
+import { NewPasswordFields } from '@/features/auth/NewPasswordFields';
 import { PasswordInput } from '@/features/auth/PasswordInput';
 import { errorText } from '@/state/mutations';
 import { useBackend, useRepos } from '@/state/session';
@@ -14,20 +15,25 @@ const CONFIRM_WORD = 'DELETE';
 export function AccountTab() {
   const { auth, capabilities } = useBackend();
   const grace = capabilities.deletionGraceDays;
-  const { repos } = useRepos();
+  const { repos, session } = useRepos();
   const toast = useToast();
   const [confirm, setConfirm] = useState('');
   const [deleting, setDeleting] = useState(false);
 
   const password = useForm(
-    { password: '' },
-    (v) => ({ password: passwordError(v.password) }),
+    { current: '', next: '', confirm: '' },
+    (v) => ({ current: requiredError(v.current, 'Enter your current password.'), ...newPasswordErrors(v.next, v.confirm, v.current) }),
     async (v) => {
-      await auth.updatePassword(v.password);
+      await auth.changePassword(v.current, v.next);
       password.reset();
-      toast.show('Password updated.', { kind: 'success' });
+      toast.show('Password changed.', { kind: 'success' });
     },
   );
+
+  const sendResetLink = async () => {
+    await auth.requestPasswordReset(session.email);
+    toast.show(`We sent a reset link to ${session.email}.`);
+  };
 
   const signOut = async (scope: 'local' | 'global') => {
     try {
@@ -54,13 +60,22 @@ export function AccountTab() {
 
   return (
     <>
-      <SettingsCard title="Password" titleId="pw-h">
+      <SettingsCard title="Password" titleId="pw-h" description="Enter your current password, then the new one twice.">
         <form noValidate onSubmit={password.onSubmit} className="flex flex-col gap-4">
-          <Field label="New password" error={password.errors.password}>
-            {(c) => <PasswordInput id={c.id} describedBy={c.describedBy} invalid={c.invalid} autoComplete="new-password" showStrength value={password.values.password} onChange={password.set('password')} />}
+          <Field
+            label="Current password"
+            error={password.errors.current}
+            aside={
+              <button type="button" onClick={sendResetLink} className="text-[13px] font-semibold text-whisky hover:text-oak">
+                Forgot your current password?
+              </button>
+            }
+          >
+            {(c) => <PasswordInput id={c.id} describedBy={c.describedBy} invalid={c.invalid} autoComplete="current-password" value={password.values.current} onChange={password.set('current')} />}
           </Field>
+          <NewPasswordFields values={password.values} errors={password.errors} onNext={password.set('next')} onConfirm={password.set('confirm')} />
           <Button type="submit" variant="secondary" className="self-end" loading={password.busy}>
-            Update password
+            Change password
           </Button>
         </form>
       </SettingsCard>

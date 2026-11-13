@@ -30,7 +30,10 @@ export interface AuthService {
   signIn(input: SignInInput): Promise<void>;
   signOut(scope?: 'local' | 'global'): Promise<void>;
   requestPasswordReset(email: string): Promise<void>;
+  /** Sets a new password from a reset-link session (no current password needed). */
   updatePassword(password: string): Promise<void>;
+  /** Signed-in change: the current password must be right before anything changes. */
+  changePassword(current: string, next: string): Promise<void>;
   changeEmail(email: string): Promise<{ needsConfirmation: boolean }>;
 }
 
@@ -80,6 +83,17 @@ export interface Repositories {
   snapshots: SnapshotRepository;
 }
 
+/** Links in Ledger's emails (reset password, confirm email) that open the app's own page. */
+export type EmailActionMode = 'resetPassword' | 'verifyEmail' | 'verifyAndChangeEmail' | 'recoverEmail';
+
+export interface EmailActionService {
+  /** Checks a reset link and returns the email it belongs to. */
+  checkResetCode(code: string): Promise<string>;
+  confirmPasswordReset(code: string, password: string): Promise<void>;
+  /** Applies a confirm-email, change-email or restore-email link. */
+  applyCode(code: string): Promise<void>;
+}
+
 /** What a backend can do, so screens only offer what actually works. */
 export interface BackendCapabilities {
   /** Can end sessions on other devices. */
@@ -92,5 +106,7 @@ export interface Backend {
   kind: 'firebase' | 'supabase' | 'local';
   capabilities: BackendCapabilities;
   auth: AuthService;
+  /** Present when email links come back to the app's /auth/action page. */
+  emailActions?: EmailActionService;
   repositoriesFor(session: Session): Repositories;
 }

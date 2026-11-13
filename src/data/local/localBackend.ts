@@ -24,6 +24,7 @@ import type { Checkin, Habit, Note, Profile, Snapshot } from '@/domain/types';
  */
 
 const SESSION_KEY = 'ledger.local.session';
+const CURRENT_PASSWORD_WRONG = 'Your current password is incorrect.';
 const DELETION_GRACE_MS = 7 * 86_400_000;
 
 class LocalAuth implements AuthService {
@@ -95,6 +96,12 @@ class LocalAuth implements AuthService {
     const session = await this.requireSession();
     const passwordHash = await hashPassword(password);
     this.store.update(session.userId, (d) => ({ ...d, passwordHash }));
+  }
+
+  async changePassword(current: string, next: string): Promise<void> {
+    const session = await this.requireSession();
+    if (this.store.read(session.userId).passwordHash !== (await hashPassword(current))) throw new Error(CURRENT_PASSWORD_WRONG);
+    await this.updatePassword(next);
   }
 
   async changeEmail(email: string): Promise<{ needsConfirmation: boolean }> {

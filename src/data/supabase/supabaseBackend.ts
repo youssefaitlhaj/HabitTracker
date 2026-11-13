@@ -88,6 +88,13 @@ class SupabaseAuth implements AuthService {
     check(await this.db.auth.updateUser({ password }));
   }
 
+  async changePassword(current: string, next: string): Promise<void> {
+    const { data } = await this.db.auth.getUser();
+    const verified = await this.db.auth.signInWithPassword({ email: data.user?.email ?? '', password: current });
+    if (verified.error) throw new Error('Your current password is incorrect.');
+    await this.updatePassword(next);
+  }
+
   async changeEmail(email: string): Promise<{ needsConfirmation: boolean }> {
     check(await this.db.auth.updateUser({ email }));
     return { needsConfirmation: true };

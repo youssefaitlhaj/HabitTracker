@@ -1,6 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import {
+  applyActionCode,
   browserLocalPersistence,
+  confirmPasswordReset,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  verifyPasswordResetCode,
   browserSessionPersistence,
   createUserWithEmailAndPassword,
   deleteUser,
@@ -34,6 +39,7 @@ import { DEFAULT_SETTINGS, nowIso } from '../defaults';
 import type {
   AuthService,
   Backend,
+  EmailActionService,
   CheckinRepository,
   HabitRepository,
   NoteRepository,
@@ -146,6 +152,16 @@ class FirebaseAuthService implements AuthService {
     await friendly(updatePassword(this.currentUser(), password));
   }
 
+  async changePassword(current: string, next: string): Promise<void> {
+    const user = this.currentUser();
+    try {
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', current));
+    } catch {
+      throw new Error('Your current password is incorrect.');
+    }
+    await friendly(updatePassword(user, next));
+  }
+
   async changeEmail(email: string): Promise<{ needsConfirmation: boolean }> {
     await friendly(verifyBeforeUpdateEmail(this.currentUser(), email, continueUrl()));
     return { needsConfirmation: true };
@@ -154,6 +170,23 @@ class FirebaseAuthService implements AuthService {
   private currentUser(): User {
     if (!this.auth.currentUser) throw new Error('You are signed out. Log in and try again.');
     return this.auth.currentUser;
+  }
+}
+
+/** Handles the links in Firebase's emails on Ledger's own /auth/action page. */
+class FirebaseEmailActions implements EmailActionService {
+  constructor(private readonly auth: Auth) {}
+
+  checkResetCode(code: string): Promise<string> {
+    return friendly(verifyPasswordResetCode(this.auth, code));
+  }
+
+  confirmPasswordReset(code: string, password: string): Promise<void> {
+    return friendly(confirmPasswordReset(this.auth, code, password));
+  }
+
+  applyCode(code: string): Promise<void> {
+    return friendly(applyActionCode(this.auth, code));
   }
 }
 
@@ -317,6 +350,7 @@ export function createFirebaseBackend(settings: FirebaseSettings): Backend {
     kind: 'firebase',
     capabilities: { globalSignOut: false, deletionGraceDays: 0 },
     auth: new FirebaseAuthService(auth, db),
+    emailActions: new FirebaseEmailActions(auth),
     repositoriesFor(session: Session): Repositories {
       const data = new UserData(db, auth, session.userId);
       return {
