@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Repositories } from '@/data/ports';
 import { useToast } from '@/ui/Toast';
@@ -39,11 +40,15 @@ export function useOptimistic<K extends LedgerPart, V>({ part, apply, run, error
   return mutation;
 }
 
-/** Re-fetches every collection, e.g. after an import. */
+/** Re-fetches every collection (after an import, or on pull-to-refresh). Resolves true when all loaded. */
 export function useRefreshLedger() {
   const { session } = useRepos();
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: ['ledger', session.userId] });
+  return useCallback(async (): Promise<boolean> => {
+    const queryKey = ['ledger', session.userId];
+    await queryClient.invalidateQueries({ queryKey });
+    return !queryClient.getQueryCache().findAll({ queryKey }).some((q) => q.state.status === 'error');
+  }, [queryClient, session.userId]);
 }
 
 export function errorText(error: unknown): string {

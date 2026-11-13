@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { NewHabitButton, useHabitEditor } from '@/features/habits/HabitEditor';
+import { useRefreshLedger } from '@/state/mutations';
 import { useBackend } from '@/state/session';
+import { PullToRefresh } from '@/ui/PullToRefresh';
+import { useToast } from '@/ui/Toast';
 import { useProfile } from '@/state/ledger';
 import { Avatar } from '@/ui/Display';
 import { cx } from '@/ui/cx';
@@ -102,6 +105,13 @@ function DemoNotice() {
 
 export function AppShell() {
   const editor = useHabitEditor();
+  const refresh = useRefreshLedger();
+  const toast = useToast();
+  const pullToRefresh = async () => {
+    if (!(await refresh())) {
+      toast.show('Couldn’t refresh. Check your connection and try again.', { kind: 'error', action: { label: 'Retry', run: () => void refresh() } });
+    }
+  };
 
   useEffect(() => {
     document.body.classList.add('has-bottom-nav');
@@ -111,49 +121,51 @@ export function AppShell() {
   const [first, second, ...rest] = NAV;
 
   return (
-    <div className="min-h-dvh">
-      <DemoNotice />
-      <div className="flex">
-        <aside className="sticky top-0 hidden h-dvh w-[240px] shrink-0 flex-col gap-7 px-4 py-6 desktop:flex" aria-label="Main">
-          <Wordmark size={40} className="px-1" />
-          <nav className="flex flex-col gap-1">
-            <NavLinks variant="sidebar" />
+    <PullToRefresh onRefresh={pullToRefresh}>
+      <div className="min-h-dvh">
+        <DemoNotice />
+        <div className="flex">
+          <aside className="sticky top-0 hidden h-dvh w-[240px] shrink-0 flex-col gap-7 px-4 py-6 desktop:flex" aria-label="Main">
+            <Wordmark size={40} className="px-1" />
+            <nav className="flex flex-col gap-1">
+              <NavLinks variant="sidebar" />
+            </nav>
+            <NewHabitButton />
+            <ProfileLink />
+          </aside>
+
+          <nav className="sticky top-0 hidden h-dvh w-[88px] shrink-0 flex-col items-center gap-2 border-r border-line bg-surface py-6 tablet:flex desktop:hidden" aria-label="Main">
+            <span className="mb-4">
+              <LogoMark size={48} />
+            </span>
+            <NavLinks variant="rail" />
           </nav>
-          <NewHabitButton />
-          <ProfileLink />
-        </aside>
 
-        <nav className="sticky top-0 hidden h-dvh w-[88px] shrink-0 flex-col items-center gap-2 border-r border-line bg-surface py-6 tablet:flex desktop:hidden" aria-label="Main">
-          <span className="mb-4">
-            <LogoMark size={48} />
+          <main className="min-w-0 flex-1 px-4 pb-32 pt-6 tablet:px-6 tablet:pb-16 desktop:px-8">
+            <div className="mx-auto max-w-[1180px]">
+              <Outlet />
+            </div>
+          </main>
+        </div>
+
+        <nav
+          aria-label="Main"
+          className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 items-center border-t border-line bg-surface px-2 pt-1.5 pb-[calc(10px+env(safe-area-inset-bottom))] tablet:hidden"
+        >
+          <NavLinks variant="bar" items={[first!, second!]} />
+          <span className="flex justify-center">
+            <button
+              type="button"
+              aria-label="New habit"
+              onClick={() => editor.open()}
+              className="-mt-5 flex h-14 w-14 items-center justify-center rounded-[18px] bg-whisky text-on-accent shadow-fab"
+            >
+              <Icon name="plus" size={24} strokeWidth={2.5} />
+            </button>
           </span>
-          <NavLinks variant="rail" />
+          <NavLinks variant="bar" items={rest} />
         </nav>
-
-        <main className="min-w-0 flex-1 px-4 pb-32 pt-6 tablet:px-6 tablet:pb-16 desktop:px-8">
-          <div className="mx-auto max-w-[1180px]">
-            <Outlet />
-          </div>
-        </main>
       </div>
-
-      <nav
-        aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 items-center border-t border-line bg-surface px-2 pt-1.5 pb-[calc(10px+env(safe-area-inset-bottom))] tablet:hidden"
-      >
-        <NavLinks variant="bar" items={[first!, second!]} />
-        <span className="flex justify-center">
-          <button
-            type="button"
-            aria-label="New habit"
-            onClick={() => editor.open()}
-            className="-mt-5 flex h-14 w-14 items-center justify-center rounded-[18px] bg-whisky text-on-accent shadow-fab"
-          >
-            <Icon name="plus" size={24} strokeWidth={2.5} />
-          </button>
-        </span>
-        <NavLinks variant="bar" items={rest} />
-      </nav>
-    </div>
+    </PullToRefresh>
   );
 }

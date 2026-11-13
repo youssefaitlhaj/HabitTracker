@@ -1,6 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
+import { Spinner } from './Spinner';
 
 const VARIANTS = {
   primary: 'bg-whisky text-on-accent hover:bg-oak border-transparent',
@@ -49,7 +50,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {...rest}
     >
       {loading ? (
-        <span className="h-4 w-4 animate-spin rounded-full border-[2.5px] border-current border-t-transparent" aria-hidden="true" />
+        <Spinner />
       ) : (
         icon && <Icon name={icon} />
       )}
