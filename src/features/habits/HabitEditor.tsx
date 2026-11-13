@@ -225,7 +225,7 @@ function HabitEditorDialog({ habit, ledger, onClose }: DialogProps) {
                 />
               )}
             </Field>
-            <Field label="Reminder time" hint="Saved now; reminders arrive in a later version." className="min-w-[200px] flex-1">
+            <Field label="Reminder time" hint="A notification at this time if it isn’t done yet. Turn reminders on in Settings › Notifications." className="min-w-[200px] flex-1">
               {(c) => (
                 <div className="flex items-center gap-2.5">
                   <Switch label="Reminder" checked={draft.reminder !== null} onChange={(on) => set('reminder', on ? '07:30' : null)} />

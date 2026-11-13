@@ -160,7 +160,7 @@ function Onboarding({ ledger }: { ledger: Ledger }) {
             <div className="flex items-center justify-between gap-4 border-b border-line-soft py-4">
               <div className="flex flex-col gap-0.5">
                 <span className="font-semibold">Daily reminder time</span>
-                <span className="text-sm text-muted">Saved with your habits; reminders arrive in a later version.</span>
+                <span className="text-sm text-muted">Turn on notifications later in Settings › Notifications.</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Switch label="Daily reminder" checked={reminder !== null} onChange={(on) => setReminder(on ? '20:30' : null)} />

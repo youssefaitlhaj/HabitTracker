@@ -20,6 +20,11 @@ service cloud.firestore {
         && request.resource.data.name.size() <= 80;
       allow read, update, delete: if isConfirmedOwner(uid);
 
+      // Browsers that receive reminder notifications (written by the app, read by the reminder job).
+      match /devices/{deviceId} {
+        allow read, write: if isConfirmedOwner(uid);
+      }
+
       match /habits/{habitId} {
         allow read, delete: if isConfirmedOwner(uid);
         allow create, update: if isConfirmedOwner(uid)

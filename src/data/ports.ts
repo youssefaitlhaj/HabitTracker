@@ -69,6 +69,17 @@ export interface NoteRepository {
   remove(id: string): Promise<void>;
 }
 
+/** A browser's push subscription, as returned by PushSubscription.toJSON(). */
+export interface PushDevice {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
+
+export interface DeviceRepository {
+  register(device: PushDevice): Promise<void>;
+  unregister(endpoint: string): Promise<void>;
+}
+
 export interface SnapshotRepository {
   load(): Promise<Snapshot>;
   /** Atomically replaces all of the user's habits, check-ins, notes and settings. */
@@ -81,6 +92,8 @@ export interface Repositories {
   checkins: CheckinRepository;
   notes: NoteRepository;
   snapshots: SnapshotRepository;
+  /** Present when the backend can send reminder notifications. */
+  devices?: DeviceRepository;
 }
 
 /** Links in Ledger's emails (reset password, confirm email) that open the app's own page. */

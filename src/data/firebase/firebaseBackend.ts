@@ -39,7 +39,9 @@ import { DEFAULT_SETTINGS, nowIso } from '../defaults';
 import type {
   AuthService,
   Backend,
+  DeviceRepository,
   EmailActionService,
+  PushDevice,
   CheckinRepository,
   HabitRepository,
   NoteRepository,
@@ -52,6 +54,8 @@ import type {
   SnapshotRepository,
 } from '../ports';
 import { friendly } from './errors';
+import { checkinsOf, habitFields, notesOf, type DeviceDoc, type HabitDoc } from './habitDoc';
+import { sha256Hex } from '@/lib/hash';
 import { detectTimeZone } from '@/domain/date';
 import type { Checkin, Habit, Note, Profile, ProfileSettings, Snapshot } from '@/domain/types';
 import { avatarDataUrl } from '@/lib/image';
@@ -78,12 +82,6 @@ interface ProfileDoc extends ProfileSettings {
   createdAt: string;
 }
 
-type StoredNote = Omit<Note, 'habitId'>;
-
-interface HabitDoc extends Habit {
-  checkins?: string[];
-  notes?: StoredNote[];
-}
 
 const MAX_BATCH_WRITES = 500;
 const RECENT_LOGIN_MS = 5 * 60_000;
@@ -97,11 +95,6 @@ function newProfile(name: string, timezone: string): ProfileDoc {
   return { ...DEFAULT_SETTINGS, name, timezone, avatarUrl: null, onboarded: false, lastExportAt: null, createdAt: nowIso() };
 }
 
-/** The habit fields only, so saving a habit never overwrites its check-ins or notes. */
-function habitFields(h: Habit): Habit {
-  const { id, name, category, color, reminder, startDate, why, order, schedules, pauses, createdAt, updatedAt } = h;
-  return { id, name, category, color, reminder, startDate, why, order, schedules, pauses, createdAt, updatedAt };
-}
 
 class FirebaseAuthService implements AuthService {
   constructor(
@@ -284,7 +277,7 @@ class FirebaseHabits extends FirebaseRepository implements HabitRepository {
 
 class FirebaseCheckins extends FirebaseRepository implements CheckinRepository {
   async list(): Promise<Checkin[]> {
-    return (await this.data.habitDocs()).flatMap((h) => (h.checkins ?? []).map((date) => ({ habitId: h.id, date })));
+    return (await this.data.habitDocs()).flatMap(checkinsOf);
   }
 
   async set({ habitId, date }: Checkin, done: boolean): Promise<void> {
@@ -294,7 +287,7 @@ class FirebaseCheckins extends FirebaseRepository implements CheckinRepository {
 
 class FirebaseNotes extends FirebaseRepository implements NoteRepository {
   async list(): Promise<Note[]> {
-    return (await this.data.habitDocs()).flatMap((h) => (h.notes ?? []).map((n) => ({ ...n, habitId: h.id })));
+    return (await this.data.habitDocs()).flatMap(notesOf);
   }
 
   async add({ habitId, ...note }: Note): Promise<void> {
@@ -309,6 +302,21 @@ class FirebaseNotes extends FirebaseRepository implements NoteRepository {
   }
 }
 
+class FirebaseDevices extends FirebaseRepository implements DeviceRepository {
+  private async ref(endpoint: string) {
+    return doc(this.data.db, 'users', this.data.uid, 'devices', await sha256Hex(endpoint));
+  }
+
+  async register(device: PushDevice): Promise<void> {
+    const docData: DeviceDoc = { subscription: device, userAgent: navigator.userAgent, createdAt: nowIso() };
+    await friendly(setDoc(await this.ref(device.endpoint), docData));
+  }
+
+  async unregister(endpoint: string): Promise<void> {
+    await friendly(deleteDoc(await this.ref(endpoint)));
+  }
+}
+
 class FirebaseSnapshots extends FirebaseRepository implements SnapshotRepository {
   async load(): Promise<Snapshot> {
     const [profile, habits] = await Promise.all([this.data.profileDoc(), this.data.habitDocs()]);
@@ -316,8 +324,8 @@ class FirebaseSnapshots extends FirebaseRepository implements SnapshotRepository
     return {
       profile: { name, timezone, weekStart, defaultRestDays, showStreaks, celebrate },
       habits: habits.map(habitFields),
-      checkins: habits.flatMap((h) => (h.checkins ?? []).map((date) => ({ habitId: h.id, date }))),
-      notes: habits.flatMap((h) => (h.notes ?? []).map((n) => ({ ...n, habitId: h.id }))),
+      checkins: habits.flatMap(checkinsOf),
+      notes: habits.flatMap(notesOf),
     };
   }
 
@@ -359,6 +367,7 @@ export function createFirebaseBackend(settings: FirebaseSettings): Backend {
         checkins: new FirebaseCheckins(data),
         notes: new FirebaseNotes(data),
         snapshots: new FirebaseSnapshots(data),
+        devices: new FirebaseDevices(data),
       };
     },
   };

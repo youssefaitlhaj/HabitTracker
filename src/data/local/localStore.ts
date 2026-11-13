@@ -1,4 +1,5 @@
 import type { Checkin, Habit, Note, ProfileSettings } from '@/domain/types';
+import { sha256Hex } from '@/lib/hash';
 
 /** Everything the demo backend keeps for one user, stored as JSON in localStorage. */
 export interface LocalUserDoc {
@@ -53,7 +54,6 @@ export class LocalStore {
   }
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`ledger:${password}`));
-  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('');
+export function hashPassword(password: string): Promise<string> {
+  return sha256Hex(`ledger:${password}`);
 }

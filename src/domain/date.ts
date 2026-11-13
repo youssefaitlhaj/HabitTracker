@@ -90,6 +90,15 @@ export function todayIn(timeZone: string, now: Date = new Date()): LocalDate {
   }
 }
 
+/** Current time of day in an IANA time zone, `HH:MM` (24-hour). */
+export function timeIn(timeZone: string, now: Date = new Date()): string {
+  try {
+    return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now);
+  } catch {
+    return now.toISOString().slice(11, 16);
+  }
+}
+
 export function detectTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 }

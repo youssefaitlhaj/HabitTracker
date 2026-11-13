@@ -30,6 +30,7 @@ const PATHS = {
   arrowDown: 'M12 5v14M6 13l6 6 6-6',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
   note: 'M5 4h10l4 4v12H5zM14 4v5h5M9 13h6M9 17h4',
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4',
 } as const;
 

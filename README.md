@@ -29,6 +29,19 @@ On the free plan, deleting an account removes it immediately (there are no sched
 
 Firebase sends the confirmation and password-reset emails itself, so no separate email service is needed.
 
+### Reminder notifications (Firebase + GitHub Actions, free)
+
+A GitHub Actions job (`.github/workflows/reminders.yml`) runs `scripts/send-reminders.ts` every 5 minutes. It sends a push notification for each habit whose reminder time has come and that isn't done yet. GitHub can start scheduled runs a few minutes late.
+
+1. Create VAPID keys once with `npx web-push generate-vapid-keys`.
+2. **Vercel › Environment Variables**: add `VITE_VAPID_PUBLIC_KEY` (the public key, visibility "Config"), then redeploy.
+3. **Firebase › Project settings › Service accounts › Generate new private key**: this downloads a JSON file.
+4. **GitHub › Settings › Secrets and variables › Actions**: add `FIREBASE_SERVICE_ACCOUNT` (the whole JSON), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (`mailto:` plus your email).
+5. **GitHub › Actions › Habit reminders › Run workflow** once to check it runs.
+6. In Ledger, go to **Settings › Notifications** and turn reminders on for each device. On iPhone, add Ledger to the Home Screen first.
+
+GitHub pauses scheduled workflows after 60 days without commits; re-enable them from the Actions tab if that happens.
+
 ### Supabase (alternative)
 
 The Supabase version is still included: run `supabase/migrations/` in a Supabase project, add its URL and its `/login` and `/update-password` redirect URLs under Authentication › URL Configuration, and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. It is used only when the Firebase keys are empty.

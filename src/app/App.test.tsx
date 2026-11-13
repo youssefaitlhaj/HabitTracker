@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createLocalBackend } from '@/data/local/localBackend';
 import { LocalStore } from '@/data/local/localStore';
+import { openSettings, resetBrowser, signUp, signUpAndSkipSetup } from '@/test/appFlows';
 import { App } from './App';
 
 /** End-to-end flows through the real screens, using the in-browser demo backend. */
@@ -11,21 +12,8 @@ function renderApp() {
   return render(<App backend={createLocalBackend(new LocalStore(localStorage))} />);
 }
 
-async function signUp(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole('link', { name: 'Sign up' }));
-  await user.type(screen.getByLabelText('Name'), 'Sam');
-  await user.type(screen.getByLabelText('Email'), 'sam@example.com');
-  await user.type(screen.getByLabelText('Password'), 'Whisky&Oat1');
-  await user.click(screen.getByRole('checkbox'));
-  await user.click(screen.getByRole('button', { name: 'Create account' }));
-}
-
 describe('Ledger app', () => {
-  beforeEach(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.history.pushState({}, '', '/');
-  });
+  beforeEach(() => resetBrowser());
 
   it('shows inline errors when signing up with empty fields', async () => {
     const user = userEvent.setup();
@@ -58,8 +46,7 @@ describe('Ledger app', () => {
   it('creates a habit through the editor and validates the name', async () => {
     const user = userEvent.setup();
     renderApp();
-    await signUp(user);
-    await user.click(await screen.findByRole('button', { name: 'Skip setup' }));
+    await signUpAndSkipSetup(user);
 
     await user.click((await screen.findAllByRole('button', { name: 'New habit' }))[0]!);
     const dialog = await screen.findByRole('dialog');
@@ -73,5 +60,13 @@ describe('Ledger app', () => {
     expect(await screen.findByRole('heading', { name: 'This week' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Practice guitar' })).toBeInTheDocument();
     expect(screen.getByText(/0 of 3 this week/)).toBeInTheDocument();
+  });
+
+  it('explains when reminders are not available on this setup', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await signUpAndSkipSetup(user);
+    await openSettings(user, 'Notifications');
+    expect(await screen.findByText('Reminders aren’t set up yet')).toBeInTheDocument();
   });
 });

@@ -6,14 +6,16 @@ import { LoadingScreen, PageHeader } from '@/ui/Display';
 import { Icon, type IconName } from '@/ui/Icon';
 import { AccountTab } from './AccountTab';
 import { DataTab } from './DataTab';
+import { NotificationsTab } from './NotificationsTab';
 import { PreferencesTab } from './PreferencesTab';
 import { ProfileTab } from './ProfileTab';
 
-/** Settings (design §8.5). Notifications, theme and language are hidden in v1. */
+/** Settings (design §8.5). Language is hidden for now. */
 
 const TABS: { id: string; label: string; icon: IconName; render: (ledger: Ledger) => ReactNode }[] = [
   { id: 'profile', label: 'Profile', icon: 'user', render: (l) => <ProfileTab ledger={l} /> },
   { id: 'preferences', label: 'Preferences', icon: 'settings', render: (l) => <PreferencesTab ledger={l} /> },
+  { id: 'notifications', label: 'Notifications', icon: 'bell', render: () => <NotificationsTab /> },
   { id: 'data', label: 'Data', icon: 'download', render: (l) => <DataTab ledger={l} /> },
   { id: 'account', label: 'Account', icon: 'logout', render: () => <AccountTab /> },
 ];
