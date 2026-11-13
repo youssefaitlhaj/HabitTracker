@@ -14,7 +14,9 @@ interface PasswordInputProps {
   showStrength?: boolean;
 }
 
-const STRENGTH_COLOR = ['#A1311F', '#A1311F', '#8A5A00', '#4E6B2A', '#4E6B2A'];
+const STRENGTH_TONE = ['error', 'error', 'warning', 'success', 'success'] as const;
+const BAR = { error: 'bg-error', warning: 'bg-warning', success: 'bg-success' } as const;
+const TEXT = { error: 'text-error', warning: 'text-warning', success: 'text-success' } as const;
 
 /** Password field with show/hide and an optional strength bar. */
 export function PasswordInput({ id, value, onChange, invalid, describedBy, autoComplete, showStrength }: PasswordInputProps) {
@@ -47,10 +49,10 @@ export function PasswordInput({ id, value, onChange, invalid, describedBy, autoC
         <div className="flex items-center gap-2.5">
           <div className="grid flex-1 grid-cols-4 gap-1" aria-hidden="true">
             {[0, 1, 2, 3].map((i) => (
-              <span key={i} className={cx('h-1 rounded-sm')} style={{ background: i < strength.score ? STRENGTH_COLOR[strength.score] : '#E2D7C4' }} />
+              <span key={i} className={cx('h-1 rounded-sm', i < strength.score ? BAR[STRENGTH_TONE[strength.score]] : 'bg-line')} />
             ))}
           </div>
-          <span className="min-w-[64px] text-right text-xs font-semibold" style={{ color: STRENGTH_COLOR[strength.score] }}>
+          <span className={cx('min-w-[64px] text-right text-xs font-semibold', TEXT[STRENGTH_TONE[strength.score]])}>
             {strength.label}
           </span>
         </div>

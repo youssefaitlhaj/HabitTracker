@@ -186,7 +186,7 @@ function HabitEditorDialog({ habit, ledger, onClose }: DialogProps) {
                         }
                         className={cx(
                           'h-11 w-11 rounded-full border-[1.5px] text-sm font-semibold',
-                          on ? 'border-whisky bg-whisky text-surface' : 'border-line-strong bg-white text-ink',
+                          on ? 'border-whisky bg-whisky text-on-accent' : 'border-line-strong bg-field text-ink',
                         )}
                       >
                         {d.short}

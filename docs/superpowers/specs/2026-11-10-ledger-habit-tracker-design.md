@@ -30,7 +30,6 @@ https://claude.ai/artifact/MiKNQWUDknBjHy7NVD3VFH (private to the owner; the scr
 
 - **Google sign-in.** The owner decided "email only for now." Add later, once the app has a public domain and a privacy policy. When added, it must use Google's official "Sign in with Google" button (Google's branding rules forbid restyling it).
 - Delivering notifications (web push or email reminders). See §8.6.
-- Dark theme. See §8.5.
 - Languages other than English.
 - Offline-first sync. The app needs a connection to save.
 - Native iOS or Android apps, social features, sharing, payments.
@@ -156,7 +155,7 @@ All "today" and date logic uses the **user's time zone** from their profile.
 - **Rest days are excused, not missed.** A habit-day that became a rest day is removed from that day's set of scheduled habit-days. It's not in the completion % denominator, doesn't lower the heatmap shade, and doesn't stop a day from being perfect. A day on which every scheduled habit was rested is skipped, like a day with nothing scheduled.
 - **Perfect day**: a past day (or today, once complete) on which every remaining day habit (after rest days are removed) was done, with at least one done. Days with nothing scheduled are skipped.
 - **Perfect-day streak**: consecutive perfect days, using the same skipping rules as the current streak.
-- **Completion %** for any range: done day-habit check-ins ÷ scheduled, non-rested day-habit days in the range, counting only up to today. Weekly habits add min(done, target) ÷ target per week, prorated for partial weeks at the range edges.
+- **Completion %** for any range: done day-habit check-ins ÷ scheduled, non-rested day-habit days in the range, counting only up to today. Today's unfinished habits count as expected, so the % matches the "x of y" ring (changed 2026-11-13: excluding them made a new account show 100% after one check-off). Weekly habits add min(done, target) ÷ target per week, prorated for partial weeks at the range edges.
 - **Heatmap shade** for a day = that day's completion ratio for day habits: 0% → heat 0, 1–39% → 1, 40–69% → 2, 70–99% → 3, 100% → 4. A day with no day habits scheduled is shown in the plain oat colour. Days before the earliest date (below) or in the future are shown empty with a dashed outline.
 - **Earliest date** = the earliest habit start date, or the account creation date if that's earlier. Start dates may be set in the past to backfill, and imported history is visible.
 - **Editing a habit keeps its history.** Schedule and rest-day changes apply from the day they're saved. Past days are judged by the schedule that was active then. A habit can't start later than its earliest check-in (the edit dialog shows an inline error). Archived periods are excluded entirely, so they're neither missed nor counted, and restoring doesn't create a gap of misses. Changing the week start in Preferences does recalculate week-based rules (rest days, weekly habits) for all history. The setting shows a one-line note saying so.
@@ -177,7 +176,7 @@ All "today" and date logic uses the **user's time zone** from their profile.
 ### 8.5 Settings
 
 - **Profile**: avatar (upload a square image ≥ 256 px, stored in Supabase Storage; initials if none), display name, email, time zone (auto-detected at sign-up). Save/Discard are only enabled when something changed.
-- **Preferences**: week starts on Monday or Sunday, default rest days per week (0–2), show streaks (on/off), celebrate perfect days (a short, reduced-motion-aware animation). The **Theme** control is hidden in v1 (light only; dark theme is a later version). The **Language** select is hidden in v1.
+- **Preferences**: week starts on Monday or Sunday, default rest days per week (0–2), show streaks (on/off), celebrate perfect days (a short, reduced-motion-aware animation). **Theme**: Light, Dark or System, remembered per device (added 2026-11-13). Dark uses the cask/amber palette from design B; every colour is a token with a light and a dark value in `src/index.css`. The **Language** select is hidden in v1.
 - **Notifications** tab: hidden in v1.
 - **Data**: see §8.7.
 - **Account**: see §8.1.

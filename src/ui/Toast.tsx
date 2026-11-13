@@ -108,7 +108,7 @@ function ToastView({ toast, duration, paused, onPause, onDismiss }: ToastViewPro
       onMouseLeave={() => onPause(false)}
       onFocus={() => onPause(true)}
       onBlur={() => onPause(false)}
-      className="fixed left-1/2 z-[60] w-max max-w-[calc(100vw-32px)] -translate-x-1/2 animate-toast-in overflow-hidden rounded-2xl bg-[#2A1A0F] text-paper shadow-toast"
+      className="fixed left-1/2 z-[60] w-max max-w-[calc(100vw-32px)] -translate-x-1/2 animate-toast-in overflow-hidden rounded-2xl bg-toast text-on-cask shadow-toast"
       style={{ bottom: 'calc(var(--toast-offset) + env(safe-area-inset-bottom))' }}
     >
       <div className="flex min-h-14 items-center gap-3 py-2 pl-3 pr-2">
@@ -135,7 +135,7 @@ function ToastView({ toast, duration, paused, onPause, onDismiss }: ToastViewPro
           type="button"
           aria-label="Dismiss message"
           onClick={onDismiss}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#CDBBA0] hover:bg-white/5"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-on-cask-muted hover:bg-white/5"
         >
           <Icon name="x" size={16} strokeWidth={2.5} />
         </button>

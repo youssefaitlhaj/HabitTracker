@@ -288,7 +288,10 @@ export class LedgerStats {
     return best;
   }
 
-  /** Done ÷ expected over a range; rest days and pending today are left out (design §8.3). */
+  /**
+   * Done ÷ expected over a range (design §8.3). Excused rest days are left out; today's
+   * unfinished habits count as expected, so the % matches the "x of y" ring on Today.
+   */
   private completion(habits: Habit[], start: LocalDate, end: LocalDate): number | null {
     let num = 0;
     let den = 0;
@@ -299,7 +302,7 @@ export class LedgerStats {
         if (status === 'done') {
           num += 1;
           den += 1;
-        } else if (status === 'missed') den += 1;
+        } else if (status === 'missed' || status === 'pending') den += 1;
       }
       for (let w = startOfWeek(start, this.weekStart); w <= end; w = addDays(w, 7)) {
         const progress = this.weekProgress(habit, w);

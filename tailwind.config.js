@@ -1,4 +1,10 @@
-/** Design tokens from the design document, section 7.1. Single source of truth for colours. */
+/**
+ * Design tokens (design §7.1). Values live in src/index.css as CSS variables (light + dark);
+ * this file only maps token names to them, so every colour switches with the theme.
+ */
+const token = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+const tokens = (names) => Object.fromEntries(names.map((n) => [n, token(n)]));
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
@@ -9,30 +15,15 @@ export default {
     },
     extend: {
       colors: {
-        paper: '#F4EEE2',
-        surface: '#FBF8F2',
-        oat: '#EFE7D8',
-        'oat-deep': '#EADFCB',
-        line: '#E2D7C4',
-        'line-soft': '#EAE1D0',
-        'line-strong': '#CDBFA8',
-        ink: '#2E1C10',
-        muted: '#6B5643',
-        whisky: '#A0521D',
-        oak: '#7A3E14',
-        cask: '#3A2416',
-        'cask-soft': '#E9DFCC',
-        amber: '#E8B67A',
-        success: { DEFAULT: '#4E6B2A', soft: '#E6EDD8', ink: '#2B3D16' },
-        warning: { DEFAULT: '#8A5A00', soft: '#F7E8C6', ink: '#5C3C00' },
-        error: { DEFAULT: '#A1311F', soft: '#F7E1DA', ink: '#7E2617', line: '#E7B9AE' },
-        heat: {
-          0: '#E6DCCB',
-          1: '#EBCFA8',
-          2: '#D9A066',
-          3: '#9A4E1B',
-          4: '#5E2F10',
-        },
+        ...tokens([
+          'paper', 'surface', 'field', 'oat', 'oat-deep', 'line', 'line-soft', 'line-strong', 'control',
+          'ink', 'muted', 'whisky', 'oak', 'on-accent', 'cask', 'on-cask', 'on-cask-muted', 'cask-soft',
+          'amber', 'done-surface', 'done-line', 'rest', 'bar', 'toast',
+        ]),
+        success: { DEFAULT: token('success'), soft: token('success-soft'), ink: token('success-ink') },
+        warning: { DEFAULT: token('warning'), soft: token('warning-soft'), ink: token('warning-ink') },
+        error: { DEFAULT: token('error'), soft: token('error-soft'), ink: token('error-ink'), line: token('error-line') },
+        heat: { 0: token('heat-0'), 1: token('heat-1'), 2: token('heat-2'), 3: token('heat-3'), 4: token('heat-4') },
       },
       fontFamily: {
         display: ['"Fraunces Variable"', 'Georgia', 'serif'],
@@ -45,10 +36,12 @@ export default {
         dialog: '24px',
       },
       boxShadow: {
-        lift: '0 1px 2px rgba(58, 36, 22, 0.15)',
-        dialog: '0 24px 64px rgba(42, 26, 15, 0.35)',
-        toast: '0 16px 40px rgba(42, 26, 15, 0.30), 0 0 0 1px rgba(232, 182, 122, 0.14)',
-        pop: '0 16px 40px rgba(42, 26, 15, 0.20)',
+        lift: '0 1px 2px rgba(42, 26, 15, 0.18)',
+        dialog: '0 24px 64px rgba(12, 8, 5, 0.40)',
+        toast: '0 16px 40px rgba(12, 8, 5, 0.32), 0 0 0 1px rgba(232, 182, 122, 0.14)',
+        pop: '0 16px 40px rgba(12, 8, 5, 0.22)',
+        knob: '0 1px 3px rgba(42, 26, 15, 0.3)',
+        fab: '0 8px 20px rgba(160, 82, 29, 0.35)',
       },
       keyframes: {
         'toast-in': { from: { opacity: '0', transform: 'translateY(12px)' }, to: { opacity: '1', transform: 'none' } },

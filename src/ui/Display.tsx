@@ -8,7 +8,7 @@ import { Icon, type IconName } from './Icon';
 const TILE_TONES = {
   light: 'border border-line bg-surface text-ink',
   well: 'bg-paper text-ink',
-  dark: 'bg-cask text-paper',
+  dark: 'bg-cask text-on-cask',
 } as const;
 
 interface StatTileProps {
@@ -24,7 +24,7 @@ export function StatTile({ label, value, unit, tone = 'light', accent, className
   const dark = tone === 'dark';
   return (
     <div className={cx('flex flex-col gap-1.5 rounded-[18px] p-4 tablet:p-5', TILE_TONES[tone], className)}>
-      <span className={cx('text-[13px] font-semibold', dark ? 'text-[#D9C7AA]' : 'text-muted')}>{label}</span>
+      <span className={cx('text-[13px] font-semibold', dark ? 'text-on-cask-muted' : 'text-muted')}>{label}</span>
       <span className={cx('font-display text-[32px] font-semibold leading-none tablet:text-[36px]', accent && (dark ? 'text-amber' : 'text-whisky'))}>
         {value}
         {unit && <span className={cx('ml-1.5 text-base', dark ? 'text-amber' : 'text-muted')}>{unit}</span>}
@@ -77,7 +77,7 @@ export interface BarDatum {
   empty?: boolean;
 }
 
-export function Bars({ data, height = 110, dark = false }: { data: BarDatum[]; height?: number; dark?: boolean }) {
+export function Bars({ data, height = 110 }: { data: BarDatum[]; height?: number }) {
   return (
     <div className="flex items-end gap-2" style={{ height }} aria-hidden="true">
       {data.map((d) => (
@@ -86,7 +86,7 @@ export function Bars({ data, height = 110, dark = false }: { data: BarDatum[]; h
           <div
             className={cx(
               'w-full max-w-7 rounded-t-md rounded-b-[3px]',
-              d.empty ? 'border-[1.5px] border-dashed border-line-strong' : d.highlight ? 'bg-whisky' : dark ? 'bg-[#5A3E27]' : 'bg-[#D9C3A3]',
+              d.empty ? 'border-[1.5px] border-dashed border-line-strong' : d.highlight ? 'bg-whisky' : 'bg-bar',
             )}
             style={{ height: d.empty ? height - 40 : Math.max(4, (d.value / Math.max(1, d.max)) * (height - 40)) }}
           />
@@ -133,7 +133,7 @@ export function Skeleton({ className }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={cx('block animate-shimmer rounded-[14px] bg-[linear-gradient(90deg,#EFE7D8_0,#F8F3EA_50%,#EFE7D8_100%)] bg-[length:400px_100%]', className)}
+      className={cx('skeleton block rounded-[14px]', className)}
     />
   );
 }

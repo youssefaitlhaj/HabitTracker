@@ -115,9 +115,9 @@ function HabitDetail({ habit, ledger }: { habit: Habit; ledger: Ledger }) {
 }
 
 const STATUS_STYLE: Record<DayStatus, { cell: string; tag: string }> = {
-  done: { cell: 'bg-whisky border-whisky text-surface', tag: 'Done' },
-  missed: { cell: 'bg-error-soft border-[#C9A99E] text-error-ink', tag: 'Missed' },
-  rest: { cell: 'bg-[repeating-linear-gradient(135deg,#E9CBA2_0_4px,#F4EEE2_4px_8px)] border-[#E9CBA2] text-ink', tag: 'Rest' },
+  done: { cell: 'bg-whisky border-whisky text-on-accent', tag: 'Done' },
+  missed: { cell: 'bg-error-soft border-error-line text-error-ink', tag: 'Missed' },
+  rest: { cell: 'rest-pattern text-ink', tag: 'Rest' },
   pending: { cell: 'bg-surface border-cask text-ink', tag: 'Today' },
   open: { cell: 'bg-surface border-line text-ink', tag: '' },
   unscheduled: { cell: 'bg-oat border-oat text-muted', tag: '' },

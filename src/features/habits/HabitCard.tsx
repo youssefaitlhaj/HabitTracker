@@ -6,14 +6,14 @@ import type { Ledger } from '@/state/ledger';
 import { useCheckinToggle } from '@/state/actions';
 import { CheckMark } from '@/ui/Choice';
 import { cx } from '@/ui/cx';
-import { HABIT_COLOR_HEX, streakLabel } from './habitStyle';
+import { HABIT_COLOR_HEX, HABIT_TEXT, streakLabel } from './habitStyle';
 
 /** One habit with its check-off button. Compact row on phones, card from tablet up (design §8.9). */
 
 const DOT_STYLE: Partial<Record<DayStatus, string>> = {
   done: 'bg-whisky border-whisky',
-  rest: 'bg-[repeating-linear-gradient(135deg,#E9CBA2_0_2px,#F4EEE2_2px_4px)] border-[#E9CBA2]',
-  missed: 'bg-transparent border-[#B9A88F]',
+  rest: 'rest-pattern',
+  missed: 'bg-transparent border-control',
   pending: 'bg-transparent border-ink',
 };
 
@@ -21,8 +21,8 @@ export function HabitInitial({ habit, size = 44 }: { habit: Habit; size?: number
   return (
     <span
       aria-hidden="true"
-      className="flex shrink-0 items-center justify-center rounded-[12px] font-display font-semibold text-surface"
-      style={{ width: size, height: size, background: HABIT_COLOR_HEX[habit.color], fontSize: size * 0.42 }}
+      className="flex shrink-0 items-center justify-center rounded-[12px] font-display font-semibold"
+      style={{ width: size, height: size, background: HABIT_COLOR_HEX[habit.color], color: HABIT_TEXT, fontSize: size * 0.42 }}
     >
       {habit.name.charAt(0).toUpperCase()}
     </span>
@@ -48,7 +48,7 @@ export function HabitCard({ habit, ledger, date, detail }: HabitCardProps) {
       className={cx(
         'flex items-center gap-3 rounded-[18px] border p-2.5 pr-3.5 transition-colors',
         'tablet:grid tablet:grid-cols-[1fr_auto] tablet:gap-x-3 tablet:gap-y-4 tablet:p-5',
-        done ? 'border-[#E2C39C] bg-[#F7ECDC]' : 'border-line bg-surface',
+        done ? 'border-done-line bg-done-surface' : 'border-line bg-surface',
       )}
     >
       <button
@@ -59,7 +59,7 @@ export function HabitCard({ habit, ledger, date, detail }: HabitCardProps) {
         className={cx(
           'flex h-12 w-12 shrink-0 items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] font-semibold transition-colors',
           'tablet:col-start-2 tablet:row-start-2 tablet:h-11 tablet:w-auto tablet:rounded-field tablet:px-4 tablet:text-sm',
-          done ? 'border-whisky bg-whisky text-surface' : 'border-[#B9A88F] bg-transparent text-ink hover:border-whisky',
+          done ? 'border-whisky bg-whisky text-on-accent' : 'border-control bg-transparent text-ink hover:border-whisky',
         )}
       >
         <span className="tablet:hidden">

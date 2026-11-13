@@ -1,10 +1,12 @@
 import { APP_NAME } from '@/app/config';
 import { cx } from './cx';
+import { tokenColor } from './theme';
 
 /** The Ledger mark (docs/brand/ledger-mark*.svg), drawn inline so it can switch tone. */
 
+/** `auto` follows the theme; `dark` is for the always-dark brand panel and app icon. */
 const TONES = {
-  light: { arch: '#A0521D', book: '#3A2416', bud: '#7A3E14' },
+  auto: { arch: tokenColor('logo-arch'), book: tokenColor('logo-book'), bud: tokenColor('logo-bud') },
   dark: { arch: '#E8B67A', book: '#F4EEE2', bud: '#D9A066' },
 } as const;
 
@@ -14,7 +16,7 @@ interface LogoProps {
   decorative?: boolean;
 }
 
-export function LogoMark({ size = 40, tone = 'light', decorative = true }: LogoProps) {
+export function LogoMark({ size = 40, tone = 'auto', decorative = true }: LogoProps) {
   const c = TONES[tone];
   return (
     <svg
@@ -44,11 +46,11 @@ export function LogoMark({ size = 40, tone = 'light', decorative = true }: LogoP
   );
 }
 
-export function Wordmark({ tone = 'light', size = 40, className }: Omit<LogoProps, 'decorative'> & { className?: string }) {
+export function Wordmark({ tone = 'auto', size = 40, className }: Omit<LogoProps, 'decorative'> & { className?: string }) {
   return (
     <span className={cx('inline-flex items-center gap-2.5', className)}>
       <LogoMark size={size} tone={tone} />
-      <span className={cx('font-display text-2xl font-semibold tracking-tight', tone === 'dark' ? 'text-paper' : 'text-ink')}>
+      <span className={cx('font-display text-2xl font-semibold tracking-tight', tone === 'dark' ? 'text-on-cask' : 'text-ink')}>
         {APP_NAME}
       </span>
     </span>

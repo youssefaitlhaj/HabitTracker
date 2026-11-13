@@ -5,7 +5,7 @@ import { Icon } from './Icon';
 /** Shared look for every text-like control (inputs, selects, date triggers). */
 export function fieldClass(invalid = false, extra?: string): string {
   return cx(
-    'w-full rounded-field border-[1.5px] bg-white px-3.5 text-[15px] text-ink transition-colors',
+    'w-full rounded-field border-[1.5px] bg-field px-3.5 text-[15px] text-ink transition-colors',
     'disabled:cursor-not-allowed disabled:opacity-50',
     invalid ? 'border-error' : 'border-line-strong hover:border-muted',
     extra,

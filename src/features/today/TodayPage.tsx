@@ -14,6 +14,7 @@ import { CalendarGrid } from '@/ui/CalendarGrid';
 import { cx } from '@/ui/cx';
 import { Bars, EmptyState, LoadingScreen, PageHeader, ProgressRing, SectionTitle } from '@/ui/Display';
 import { Icon } from '@/ui/Icon';
+import { tokenColor } from '@/ui/theme';
 import { useToast } from '@/ui/Toast';
 import { groupHabits } from './groups';
 
@@ -46,7 +47,7 @@ function TodayView({ ledger }: { ledger: Ledger }) {
 
       <div className="flex flex-wrap gap-4">
         <section className="card flex flex-[1_1_300px] items-center gap-5 p-5 tablet:p-6" aria-label="Today's progress">
-          <ProgressRing ratio={summary.scheduled ? summary.ratio : 0} size={124} stroke={13} track="#E6DCCB" color="#A0521D" celebrate={celebrating}>
+          <ProgressRing ratio={summary.scheduled ? summary.ratio : 0} size={124} stroke={13} track={tokenColor('heat-0')} color={tokenColor('whisky')} celebrate={celebrating}>
             <span className="font-display text-[32px] leading-none">{Math.round(summary.ratio * 100)}%</span>
             <span className="mt-1 text-xs text-muted">done</span>
           </ProgressRing>
@@ -61,8 +62,8 @@ function TodayView({ ledger }: { ledger: Ledger }) {
           </div>
         </section>
 
-        <section className="flex flex-[1_1_220px] flex-col justify-between gap-3.5 rounded-card bg-cask p-5 text-paper tablet:p-6" aria-label="Perfect-day streak">
-          <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-[#D9C7AA]">Perfect-day streak</p>
+        <section className="flex flex-[1_1_220px] flex-col justify-between gap-3.5 rounded-card bg-cask p-5 text-on-cask tablet:p-6" aria-label="Perfect-day streak">
+          <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-on-cask-muted">Perfect-day streak</p>
           <p className="m-0 font-display text-[44px] leading-none tablet:text-[60px]">
             {stats.perfectDayStreak()}
             <span className="ml-2 text-xl text-amber">days</span>
@@ -182,13 +183,13 @@ function WeekStrip({ ledger, date, onPick }: { ledger: Ledger; date: LocalDate; 
               onClick={() => (d > today ? toast.show('You can only check off today and past days.') : onPick(d))}
               className={cx(
                 'flex h-16 flex-col items-center justify-center gap-0.5 rounded-[14px] border-[1.5px]',
-                on ? 'border-whisky bg-whisky text-surface' : d === today ? 'border-whisky bg-surface' : 'border-line bg-surface',
+                on ? 'border-whisky bg-whisky text-on-accent' : d === today ? 'border-whisky bg-surface' : 'border-line bg-surface',
                 d > today && 'text-muted',
               )}
             >
               <span className="text-[11px] font-semibold">{formatDate(d, { weekday: 'short' })}</span>
               <span className="text-base font-bold">{Number(d.slice(8))}</span>
-              <span className={cx('h-1.5 w-1.5 rounded-full', s.done > 0 ? (on ? 'bg-surface' : 'bg-whisky') : 'bg-transparent')} />
+              <span className={cx('h-1.5 w-1.5 rounded-full', s.done > 0 ? (on ? 'bg-on-accent' : 'bg-whisky') : 'bg-transparent')} />
             </button>
           );
         }}

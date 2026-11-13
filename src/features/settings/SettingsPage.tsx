@@ -38,7 +38,7 @@ export function SettingsPage() {
               className={({ isActive }) =>
                 cx(
                   'flex min-h-12 flex-1 items-center gap-3 rounded-field px-3.5 text-[15px] font-semibold no-underline desktop:flex-none',
-                  isActive || (t.id === 'profile' && tab === 'profile') ? 'bg-cask text-paper' : 'text-muted hover:bg-oat',
+                  isActive || (t.id === 'profile' && tab === 'profile') ? 'bg-ink text-paper' : 'text-muted hover:bg-oat',
                 )
               }
             >
@@ -58,7 +58,7 @@ export function SettingsCard({ title, description, children, tone = 'plain', tit
   return (
     <section
       aria-labelledby={titleId}
-      className={cx('flex flex-col gap-4 rounded-card p-5 tablet:p-6', tone === 'danger' ? 'border-[1.5px] border-error-line bg-[#FBF3F0]' : 'card')}
+      className={cx('flex flex-col gap-4 rounded-card p-5 tablet:p-6', tone === 'danger' ? 'border-[1.5px] border-error-line bg-error-soft/40' : 'card')}
     >
       <div className="flex flex-col gap-1">
         <h2 id={titleId} className={cx('m-0 font-display text-[22px] font-semibold', tone === 'danger' && 'text-error-ink')}>

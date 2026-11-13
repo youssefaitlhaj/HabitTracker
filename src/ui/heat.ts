@@ -9,6 +9,6 @@ export const HEAT_BG: Record<HeatLevel, string> = {
   4: 'bg-heat-4',
 };
 
-export const heatText = (level: HeatLevel): string => (level >= 3 ? 'text-surface' : 'text-ink');
+export const heatText = (level: HeatLevel): string => (level >= 3 ? 'text-on-accent' : 'text-ink');
 
 export const HEAT_LEVELS: HeatLevel[] = [0, 1, 2, 3, 4];

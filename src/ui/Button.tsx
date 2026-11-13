@@ -3,12 +3,12 @@ import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
 
 const VARIANTS = {
-  primary: 'bg-whisky text-surface hover:bg-oak border-transparent',
-  secondary: 'bg-white text-ink border-line-strong hover:bg-surface',
+  primary: 'bg-whisky text-on-accent hover:bg-oak border-transparent',
+  secondary: 'bg-field text-ink border-line-strong hover:bg-surface',
   ghost: 'bg-transparent text-whisky border-transparent hover:bg-oat',
   quiet: 'bg-transparent text-muted border-transparent hover:bg-oat',
-  dark: 'bg-cask text-paper border-transparent hover:bg-ink',
-  danger: 'bg-error text-surface border-transparent hover:bg-error-ink',
+  dark: 'bg-cask text-on-cask border-transparent hover:opacity-90',
+  danger: 'bg-error text-on-accent border-transparent hover:opacity-90',
   'danger-outline': 'bg-transparent text-error border-error-line hover:bg-error-soft',
 } as const;
 
@@ -67,7 +67,7 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
 const ICON_TONES = {
   plain: 'bg-transparent text-muted hover:bg-oat',
   oat: 'bg-oat text-ink hover:bg-oat-deep',
-  primary: 'bg-whisky text-surface hover:bg-oak',
+  primary: 'bg-whisky text-on-accent hover:bg-oak',
 } as const;
 
 export function IconButton({ icon, label, tone = 'plain', className, type = 'button', ...rest }: IconButtonProps) {

@@ -153,7 +153,16 @@ describe('range stats', () => {
     expect(r.checks).toBe(7);
     expect(r.perfectDays).toBe(7);
     expect(r.daysTracked).toBe(9);
-    expect(r.completion).toBeCloseTo(7 / 8); // today is pending and not counted
+    expect(r.completion).toBeCloseTo(7 / 9); // today's unfinished habit counts, like the ring
+  });
+
+  it('counts today’s unfinished habits, so a new account isn’t 100% after one check-off', () => {
+    const a = makeHabit({ startDate: TODAY });
+    const b = makeHabit({ startDate: TODAY });
+    const c = makeHabit({ startDate: TODAY });
+    const s = stats([a, b, c], checkinsFor(a, [TODAY]));
+    expect(s.rangeStats('2026-11-01', '2026-11-30').completion).toBeCloseTo(1 / 3);
+    expect(s.habitCompletion(b, '2026-11-01', TODAY)).toBe(0);
   });
 
   it('does not count excused rest days against completion', () => {

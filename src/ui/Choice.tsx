@@ -25,7 +25,7 @@ export function Switch({ checked, onChange, label, disabled }: SwitchProps) {
         checked ? 'justify-end bg-whisky' : 'justify-start bg-line-strong',
       )}
     >
-      <span className="h-[26px] w-[26px] rounded-full bg-surface shadow-[0_1px_3px_rgba(42,26,15,0.3)]" />
+      <span className="h-[26px] w-[26px] rounded-full bg-on-cask shadow-knob" />
     </button>
   );
 }
@@ -78,7 +78,8 @@ interface ChipProps {
 }
 
 export function Chip({ selected, onClick, children, tone = 'dark', label }: ChipProps) {
-  const on = tone === 'dark' ? 'border-cask bg-cask text-paper' : 'border-whisky bg-whisky text-surface';
+  // Selected chips invert the page colours, so they stand out in light and dark themes alike.
+  const on = tone === 'dark' ? 'border-ink bg-ink text-paper' : 'border-whisky bg-whisky text-on-accent';
   return (
     <button
       type="button"
@@ -87,7 +88,7 @@ export function Chip({ selected, onClick, children, tone = 'dark', label }: Chip
       onClick={onClick}
       className={cx(
         'inline-flex min-h-10 items-center gap-2 rounded-full border-[1.5px] px-4 text-sm font-medium transition-colors',
-        selected ? on : 'border-line bg-white text-ink hover:border-line-strong',
+        selected ? on : 'border-line bg-field text-ink hover:border-line-strong',
       )}
     >
       {children}
@@ -127,7 +128,7 @@ function StepButton({ label, onClick, sign }: { label: string; onClick: () => vo
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="h-11 w-11 rounded-field border-[1.5px] border-line-strong bg-white text-xl text-ink hover:bg-surface"
+      className="h-11 w-11 rounded-field border-[1.5px] border-line-strong bg-field text-xl text-ink hover:bg-surface"
     >
       {sign}
     </button>

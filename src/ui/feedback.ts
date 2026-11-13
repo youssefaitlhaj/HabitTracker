@@ -22,18 +22,18 @@ export const FEEDBACK: Record<FeedbackKind, KindStyle> = {
     icon: 'check',
     role: 'status',
     toast: { color: '#A8C98A', tint: 'rgba(168, 201, 138, 0.16)' },
-    banner: { surface: 'bg-success-soft text-success-ink', badge: 'bg-success text-surface' },
+    banner: { surface: 'bg-success-soft text-success-ink', badge: 'bg-success text-on-accent' },
   },
   warning: {
     icon: 'warning',
     role: 'alert',
     toast: { color: '#F0C46A', tint: 'rgba(240, 196, 106, 0.16)' },
-    banner: { surface: 'bg-warning-soft text-warning-ink', badge: 'bg-warning text-surface' },
+    banner: { surface: 'bg-warning-soft text-warning-ink', badge: 'bg-warning text-on-accent' },
   },
   error: {
     icon: 'x',
     role: 'alert',
     toast: { color: '#F29A88', tint: 'rgba(242, 154, 136, 0.16)' },
-    banner: { surface: 'bg-error-soft text-error-ink', badge: 'bg-error text-surface' },
+    banner: { surface: 'bg-error-soft text-error-ink', badge: 'bg-error text-on-accent' },
   },
 };

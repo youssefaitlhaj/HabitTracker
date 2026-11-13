@@ -11,6 +11,7 @@ import { ProgressPage } from '@/features/progress/ProgressPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { TodayPage } from '@/features/today/TodayPage';
 import { BackendProvider } from '@/state/session';
+import { ThemeProvider } from '@/ui/theme';
 import { ToastProvider } from '@/ui/Toast';
 import { AppShell } from './shell/AppShell';
 import { FirstRunGate, RequireAuth } from './shell/RequireAuth';
@@ -19,29 +20,31 @@ export function App({ backend }: { backend: Backend }) {
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } }));
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <BackendProvider backend={backend}>
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/update-password" element={<UpdatePasswordPage />} />
-              <Route path="/privacy" element={<LegalPage kind="privacy" />} />
-              <Route path="/terms" element={<LegalPage kind="terms" />} />
-              <Route path="/welcome" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
-              <Route element={<RequireAuth><FirstRunGate><AppShell /></FirstRunGate></RequireAuth>}>
-                <Route index element={<TodayPage />} />
-                <Route path="progress" element={<ProgressPage />} />
-                <Route path="habits" element={<HabitsPage />} />
-                <Route path="habits/:id" element={<HabitDetailPage />} />
-                <Route path="settings/:tab?" element={<SettingsPage />} />
-              </Route>
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </BrowserRouter>
-        </BackendProvider>
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <BackendProvider backend={backend}>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/update-password" element={<UpdatePasswordPage />} />
+                <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+                <Route path="/terms" element={<LegalPage kind="terms" />} />
+                <Route path="/welcome" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
+                <Route element={<RequireAuth><FirstRunGate><AppShell /></FirstRunGate></RequireAuth>}>
+                  <Route index element={<TodayPage />} />
+                  <Route path="progress" element={<ProgressPage />} />
+                  <Route path="habits" element={<HabitsPage />} />
+                  <Route path="habits/:id" element={<HabitDetailPage />} />
+                  <Route path="settings/:tab?" element={<SettingsPage />} />
+                </Route>
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </BrowserRouter>
+          </BackendProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

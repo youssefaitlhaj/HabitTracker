@@ -3,6 +3,7 @@ import { MAX_REST_DAYS } from '@/domain/habits';
 import { useProfileUpdate } from '@/state/actions';
 import type { Ledger } from '@/state/ledger';
 import { Segmented, Stepper, Switch } from '@/ui/Choice';
+import { useTheme, type ThemeChoice } from '@/ui/theme';
 import { useToast } from '@/ui/Toast';
 import { SettingsCard, SettingsRow } from './SettingsPage';
 
@@ -10,6 +11,7 @@ export function PreferencesTab({ ledger }: { ledger: Ledger }) {
   const { profile } = ledger;
   const update = useProfileUpdate();
   const toast = useToast();
+  const theme = useTheme();
   const save = (patch: ProfilePatch, message = 'Preference saved.') => {
     update.mutate(patch);
     toast.show(message, { kind: 'success' });
@@ -17,6 +19,18 @@ export function PreferencesTab({ ledger }: { ledger: Ledger }) {
 
   return (
     <SettingsCard title="Preferences" titleId="prefs-h">
+      <SettingsRow label="Theme" hint="Applies on this device. System follows your phone or computer.">
+        <Segmented<ThemeChoice>
+          label="Theme"
+          value={theme.choice}
+          onChange={theme.setChoice}
+          options={[
+            { value: 'light', label: 'Light' },
+            { value: 'dark', label: 'Dark' },
+            { value: 'system', label: 'System' },
+          ]}
+        />
+      </SettingsRow>
       <SettingsRow label="Week starts on" hint="Changing this recalculates rest days and weekly habits for all history.">
         <Segmented
           label="Week starts on"

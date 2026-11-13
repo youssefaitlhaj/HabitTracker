@@ -2,11 +2,109 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Colour tokens (design §7.1) as RGB channels, so Tailwind can add opacity.
+ * The only place colours are defined: light under :root, dark under [data-theme='dark'].
+ * Components use token names (bg-surface, text-on-accent…), never raw hex values.
+ */
 @layer base {
   :root {
-    --toast-offset: 24px;
     color-scheme: light;
+    --paper: 244 238 226;
+    --surface: 251 248 242;
+    --field: 255 255 255;
+    --oat: 239 231 216;
+    --oat-deep: 234 223 203;
+    --line: 226 215 196;
+    --line-soft: 234 225 208;
+    --line-strong: 205 191 168;
+    --control: 156 138 114;
+    --ink: 46 28 16;
+    --muted: 107 86 67;
+    --placeholder: 125 104 83;
+    --whisky: 160 82 29;
+    --oak: 122 62 20;
+    --on-accent: 251 248 242;
+    --cask: 58 36 22;
+    --on-cask: 244 238 226;
+    --on-cask-muted: 217 199 170;
+    --cask-soft: 233 223 204;
+    --amber: 232 182 122;
+    --done-surface: 247 236 220;
+    --done-line: 226 195 156;
+    --rest: 233 203 162;
+    --bar: 217 195 163;
+    --shimmer: 248 243 234;
+    --toast: 42 26 15;
+    --success: 78 107 42;
+    --success-soft: 230 237 216;
+    --success-ink: 43 61 22;
+    --warning: 138 90 0;
+    --warning-soft: 247 232 198;
+    --warning-ink: 92 60 0;
+    --error: 161 49 31;
+    --error-soft: 247 225 218;
+    --error-ink: 126 38 23;
+    --error-line: 231 185 174;
+    --heat-0: 230 220 203;
+    --heat-1: 235 207 168;
+    --heat-2: 217 160 102;
+    --heat-3: 154 78 27;
+    --heat-4: 94 47 16;
+    --logo-arch: 160 82 29;
+    --logo-book: 58 36 22;
+    --logo-bud: 122 62 20;
+    --toast-offset: 24px;
   }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --paper: 23 16 11;
+    --surface: 34 23 15;
+    --field: 29 20 13;
+    --oat: 44 30 20;
+    --oat-deep: 58 40 27;
+    --line: 58 42 30;
+    --line-soft: 48 34 26;
+    --line-strong: 90 67 48;
+    --control: 125 104 80;
+    --ink: 241 232 216;
+    --muted: 184 166 140;
+    --placeholder: 156 138 114;
+    --whisky: 224 151 63;
+    --oak: 240 180 106;
+    --on-accent: 27 18 12;
+    --cask: 58 36 22;
+    --on-cask: 244 238 226;
+    --on-cask-muted: 217 199 170;
+    --cask-soft: 233 223 204;
+    --amber: 232 182 122;
+    --done-surface: 46 30 16;
+    --done-line: 106 69 36;
+    --rest: 106 69 36;
+    --bar: 74 52 36;
+    --shimmer: 58 40 27;
+    --toast: 58 40 27;
+    --success: 168 201 138;
+    --success-soft: 31 42 21;
+    --success-ink: 207 227 186;
+    --warning: 240 196 106;
+    --warning-soft: 51 39 15;
+    --warning-ink: 245 221 166;
+    --error: 242 154 136;
+    --error-soft: 58 28 22;
+    --error-ink: 248 195 183;
+    --error-line: 122 58 46;
+    --heat-0: 44 30 20;
+    --heat-1: 90 62 39;
+    --heat-2: 138 90 44;
+    --heat-3: 194 122 44;
+    --heat-4: 232 182 122;
+    --logo-arch: 232 182 122;
+    --logo-book: 244 238 226;
+    --logo-bud: 217 160 102;
+  }
+
   @media (max-width: 767px) {
     body.has-bottom-nav {
       --toast-offset: 100px;
@@ -25,7 +123,7 @@
     @apply outline outline-2 outline-offset-2 outline-whisky;
   }
   ::placeholder {
-    color: #7d6853;
+    color: rgb(var(--placeholder));
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -45,7 +143,14 @@
   .card {
     @apply rounded-card border border-line bg-surface;
   }
-  .sr-only-focusable:not(:focus) {
-    @apply sr-only;
+  /** Striped fill for excused rest days, shared by every calendar. */
+  .rest-pattern {
+    background-image: repeating-linear-gradient(135deg, rgb(var(--rest)) 0 3px, rgb(var(--paper)) 3px 6px);
+    @apply border-rest;
+  }
+  .skeleton {
+    background-image: linear-gradient(90deg, rgb(var(--oat)) 0, rgb(var(--shimmer)) 50%, rgb(var(--oat)) 100%);
+    background-size: 400px 100%;
+    @apply animate-shimmer;
   }
 }

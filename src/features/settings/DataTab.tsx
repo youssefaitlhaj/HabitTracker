@@ -112,7 +112,7 @@ function ImportCard({ onImport }: { onImport: (s: Snapshot, mode: ImportMode) =>
         onDrop={onDrop}
         className={cx(
           'relative flex min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-5 text-center focus-within:outline focus-within:outline-2 focus-within:outline-whisky',
-          error ? 'border-[#C9A99E] bg-[#FBF3F0]' : dragging ? 'border-whisky bg-oat' : 'border-line-strong bg-paper',
+          error ? 'border-error-line bg-error-soft/40' : dragging ? 'border-whisky bg-oat' : 'border-line-strong bg-paper',
         )}
       >
         <Icon name="upload" size={28} className="text-whisky" />

@@ -147,7 +147,7 @@ export function AppShell() {
             type="button"
             aria-label="New habit"
             onClick={() => editor.open()}
-            className="-mt-5 flex h-14 w-14 items-center justify-center rounded-[18px] bg-whisky text-surface shadow-[0_8px_20px_rgba(160,82,29,0.35)]"
+            className="-mt-5 flex h-14 w-14 items-center justify-center rounded-[18px] bg-whisky text-on-accent shadow-fab"
           >
             <Icon name="plus" size={24} strokeWidth={2.5} />
           </button>

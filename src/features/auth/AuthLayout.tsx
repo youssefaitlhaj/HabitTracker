@@ -15,7 +15,7 @@ const DECO = Array.from({ length: 22 }, (_, w) =>
 export function AuthLayout({ title, subtitle, children, tabs = false }: { title: string; subtitle: string; children: ReactNode; tabs?: boolean }) {
   return (
     <div className="flex min-h-dvh flex-wrap">
-      <section className="flex flex-[1_1_420px] flex-col justify-between gap-10 bg-cask px-6 py-10 text-paper tablet:px-14" aria-label="About Ledger">
+      <section className="flex flex-[1_1_420px] flex-col justify-between gap-10 bg-cask px-6 py-10 text-on-cask tablet:px-14" aria-label="About Ledger">
         <Link to="/login" className="self-start no-underline">
           <Wordmark tone="dark" size={48} />
         </Link>

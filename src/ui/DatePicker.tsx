@@ -105,7 +105,7 @@ export function DatePicker({ id, value, onChange, today, weekStart, min, max, in
                     'h-[38px] rounded-[10px] border-[1.5px] text-sm disabled:cursor-not-allowed',
                     !inMonth && 'invisible',
                     inMonth && !allowed(d) && 'opacity-35',
-                    selected ? 'border-whisky bg-whisky font-bold text-surface' : 'border-transparent hover:bg-oat',
+                    selected ? 'border-whisky bg-whisky font-bold text-on-accent' : 'border-transparent hover:bg-oat',
                     d === today && !selected && 'border-whisky font-bold',
                   )}
                 >

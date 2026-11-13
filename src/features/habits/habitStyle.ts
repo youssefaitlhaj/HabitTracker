@@ -12,6 +12,9 @@ export const HABIT_COLOR_HEX: Record<HabitColor, string> = {
   slate: '#5C6670',
 };
 
+/** Text on a habit's colour tile; the habit colours are the same in both themes. */
+export const HABIT_TEXT = '#FBF8F2';
+
 export const COLOR_LABEL: Record<HabitColor, string> = {
   whisky: 'Whisky',
   oak: 'Oak',
