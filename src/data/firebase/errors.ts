@@ -20,7 +20,7 @@ const MESSAGES: Record<string, string> = {
 };
 
 export function friendlyError(error: unknown): Error {
-  if (error instanceof FirebaseError) return new Error(MESSAGES[error.code] ?? 'Something went wrong. Please try again.');
+  if (error instanceof FirebaseError) return new Error(MESSAGES[error.code] ?? 'Something went wrong. Please try again.', { cause: error });
   return error instanceof Error ? error : new Error('Something went wrong. Please try again.');
 }
 

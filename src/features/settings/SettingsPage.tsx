@@ -1,8 +1,9 @@
 import { type ReactNode } from 'react';
 import { NavLink, Navigate, useParams } from 'react-router-dom';
-import { useLedger, type Ledger } from '@/state/ledger';
+import { LedgerView } from '@/app/shell/LedgerView';
+import type { Ledger } from '@/state/ledger';
 import { cx } from '@/ui/cx';
-import { LoadingScreen, PageHeader } from '@/ui/Display';
+import { PageHeader } from '@/ui/Display';
 import { Icon, type IconName } from '@/ui/Icon';
 import { AccountTab } from './AccountTab';
 import { DataTab } from './DataTab';
@@ -22,10 +23,8 @@ const TABS: { id: string; label: string; icon: IconName; render: (ledger: Ledger
 
 export function SettingsPage() {
   const { tab = 'profile' } = useParams();
-  const { ledger } = useLedger();
   const current = TABS.find((t) => t.id === tab);
   if (!current) return <Navigate to="/settings" replace />;
-  if (!ledger) return <LoadingScreen />;
 
   return (
     <div className="flex flex-col gap-7">
@@ -49,7 +48,9 @@ export function SettingsPage() {
             </NavLink>
           ))}
         </nav>
-        <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-4">{current.render(ledger)}</div>
+        <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-4">
+          <LedgerView>{(ledger) => current.render(ledger)}</LedgerView>
+        </div>
       </div>
     </div>
   );

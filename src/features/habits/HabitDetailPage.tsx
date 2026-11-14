@@ -5,12 +5,13 @@ import type { DayStatus } from '@/domain/stats';
 import { currentSchedule, isArchived } from '@/domain/schedule';
 import type { Habit } from '@/domain/types';
 import { useCheckinToggle, useHabitActions, useNoteActions } from '@/state/actions';
-import { useLedger, type Ledger } from '@/state/ledger';
+import { LedgerView } from '@/app/shell/LedgerView';
+import type { Ledger } from '@/state/ledger';
 import { Banner } from '@/ui/Banner';
 import { Button, IconButton } from '@/ui/Button';
 import { CalendarGrid } from '@/ui/CalendarGrid';
 import { cx } from '@/ui/cx';
-import { EmptyState, LoadingScreen, StatTile } from '@/ui/Display';
+import { EmptyState, StatTile } from '@/ui/Display';
 import { TextInput } from '@/ui/Field';
 import { Icon } from '@/ui/Icon';
 import { useToast } from '@/ui/Toast';
@@ -21,17 +22,20 @@ import { CATEGORY_LABEL, describeRest, describeSchedule } from './habitStyle';
 
 export function HabitDetailPage() {
   const { id } = useParams();
-  const { ledger } = useLedger();
-  if (!ledger) return <LoadingScreen />;
-  const habit = ledger.habits.find((h) => h.id === id);
-  if (!habit) {
-    return (
-      <EmptyState icon="list" title="Habit not found" action={<Link to="/habits">Back to all habits</Link>}>
-        It may have been deleted.
-      </EmptyState>
-    );
-  }
-  return <HabitDetail habit={habit} ledger={ledger} />;
+  return (
+    <LedgerView>
+      {(ledger) => {
+        const habit = ledger.habits.find((h) => h.id === id);
+        return habit ? (
+          <HabitDetail habit={habit} ledger={ledger} />
+        ) : (
+          <EmptyState icon="list" title="Habit not found" action={<Link to="/habits">Back to all habits</Link>}>
+            It may have been deleted.
+          </EmptyState>
+        );
+      }}
+    </LedgerView>
+  );
 }
 
 function HabitDetail({ habit, ledger }: { habit: Habit; ledger: Ledger }) {

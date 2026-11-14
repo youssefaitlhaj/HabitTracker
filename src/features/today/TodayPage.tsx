@@ -8,11 +8,12 @@ import { NewHabitButton, useHabitEditor } from '@/features/habits/HabitEditor';
 import { describeRest, describeSchedule } from '@/features/habits/habitStyle';
 import { ProgressPanel } from '@/features/progress/ProgressPanel';
 import { resolveRange, useRangeChoice } from '@/features/progress/range';
-import { useLedger, type Ledger } from '@/state/ledger';
+import { LedgerView } from '@/app/shell/LedgerView';
+import type { Ledger } from '@/state/ledger';
 import { Button } from '@/ui/Button';
 import { CalendarGrid } from '@/ui/CalendarGrid';
 import { cx } from '@/ui/cx';
-import { Bars, EmptyState, LoadingScreen, PageHeader, ProgressRing, SectionTitle } from '@/ui/Display';
+import { Bars, EmptyState, PageHeader, ProgressRing, SectionTitle } from '@/ui/Display';
 import { Icon } from '@/ui/Icon';
 import { tokenColor } from '@/ui/theme';
 import { useToast } from '@/ui/Toast';
@@ -25,9 +26,7 @@ function greeting(): string {
 }
 
 export function TodayPage() {
-  const { ledger } = useLedger();
-  if (!ledger) return <LoadingScreen />;
-  return <TodayView ledger={ledger} />;
+  return <LedgerView>{(ledger) => <TodayView ledger={ledger} />}</LedgerView>;
 }
 
 function TodayView({ ledger }: { ledger: Ledger }) {

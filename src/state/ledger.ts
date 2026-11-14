@@ -62,8 +62,17 @@ export interface Ledger {
   stats: LedgerStats;
 }
 
-/** Everything a signed-in screen needs. `ledger` is null while loading. */
-export function useLedger(): { ledger: Ledger | null; error: Error | null } {
+export interface LedgerState {
+  /** Null while loading, or when a collection failed. */
+  ledger: Ledger | null;
+  error: Error | null;
+  /** Re-fetches the collections that failed. */
+  retry: () => void;
+  retrying: boolean;
+}
+
+/** Everything a signed-in screen needs. */
+export function useLedger(): LedgerState {
   const profile = useProfile();
   const habits = useHabits();
   const checkins = useCheckins();
@@ -83,6 +92,12 @@ export function useLedger(): { ledger: Ledger | null; error: Error | null } {
     return { profile: profile.data, habits: habits.data, checkins: checkins.data, notes: notes.data, tasks: tasks.data, today, stats };
   }, [profile.data, habits.data, checkins.data, notes.data, tasks.data, today]);
 
-  const error = (profile.error ?? habits.error ?? checkins.error ?? notes.error ?? tasks.error) as Error | null;
-  return { ledger, error };
+  const parts = [profile, habits, checkins, notes, tasks];
+  const failed = parts.filter((q) => q.isError);
+  return {
+    ledger,
+    error: (failed[0]?.error as Error | undefined) ?? null,
+    retry: () => failed.forEach((q) => void q.refetch()),
+    retrying: failed.some((q) => q.isFetching),
+  };
 }

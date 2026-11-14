@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import type { Backend } from '@/data/ports';
@@ -19,7 +19,15 @@ import { FirstRunGate, RequireAuth } from './shell/RequireAuth';
 import { ScrollToTop } from './shell/ScrollToTop';
 
 export function App({ backend }: { backend: Backend }) {
-  const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } }));
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        queryCache: new QueryCache({
+          onError: (error, query) => console.error(`[Ledger] Couldn’t load ${String(query.queryKey[2] ?? query.queryKey[0])}:`, error),
+        }),
+        defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+      }),
+  );
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

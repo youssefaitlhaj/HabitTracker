@@ -3,17 +3,16 @@ import { moveHabit } from '@/domain/habits';
 import { currentSchedule, isArchived } from '@/domain/schedule';
 import type { Habit } from '@/domain/types';
 import { useHabitActions } from '@/state/actions';
-import { useLedger, type Ledger } from '@/state/ledger';
+import { LedgerView } from '@/app/shell/LedgerView';
+import type { Ledger } from '@/state/ledger';
 import { Button, IconButton } from '@/ui/Button';
-import { EmptyState, LoadingScreen, PageHeader, SectionTitle } from '@/ui/Display';
+import { EmptyState, PageHeader, SectionTitle } from '@/ui/Display';
 import { NewHabitButton } from './HabitEditor';
 import { HabitInitial } from './HabitCard';
 import { CATEGORY_LABEL, describeSchedule } from './habitStyle';
 
 export function HabitsPage() {
-  const { ledger } = useLedger();
-  if (!ledger) return <LoadingScreen />;
-  return <HabitsView ledger={ledger} />;
+  return <LedgerView>{(ledger) => <HabitsView ledger={ledger} />}</LedgerView>;
 }
 
 function HabitsView({ ledger }: { ledger: Ledger }) {

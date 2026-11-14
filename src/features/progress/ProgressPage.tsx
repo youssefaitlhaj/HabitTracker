@@ -1,15 +1,14 @@
 import { Link } from 'react-router-dom';
 import { isArchived } from '@/domain/schedule';
 import { HabitInitial } from '@/features/habits/HabitCard';
-import { useLedger, type Ledger } from '@/state/ledger';
-import { LoadingScreen, PageHeader, SectionTitle } from '@/ui/Display';
+import { LedgerView } from '@/app/shell/LedgerView';
+import type { Ledger } from '@/state/ledger';
+import { PageHeader, SectionTitle } from '@/ui/Display';
 import { ProgressPanel } from './ProgressPanel';
 import { resolveRange, useRangeChoice, type ResolvedRange } from './range';
 
 export function ProgressPage() {
-  const { ledger } = useLedger();
-  if (!ledger) return <LoadingScreen />;
-  return <ProgressView ledger={ledger} />;
+  return <LedgerView>{(ledger) => <ProgressView ledger={ledger} />}</LedgerView>;
 }
 
 function ProgressView({ ledger }: { ledger: Ledger }) {

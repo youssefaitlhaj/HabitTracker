@@ -4,11 +4,11 @@ import { newId, nowIso } from '@/data/defaults';
 import { createHabit } from '@/domain/habits';
 import type { Category, WeekStart } from '@/domain/types';
 import { useHabitActions, useProfileUpdate } from '@/state/actions';
-import { useLedger, type Ledger } from '@/state/ledger';
+import { LedgerView } from '@/app/shell/LedgerView';
+import type { Ledger } from '@/state/ledger';
 import { Button } from '@/ui/Button';
 import { Chip, Segmented, Switch } from '@/ui/Choice';
 import { cx } from '@/ui/cx';
-import { LoadingScreen } from '@/ui/Display';
 import { Field, TextInput } from '@/ui/Field';
 import { Icon } from '@/ui/Icon';
 import { Wordmark } from '@/ui/Logo';
@@ -34,9 +34,7 @@ const STARTERS: { name: string; category: Category }[] = [
 const SWEET_SPOT = 5;
 
 export function OnboardingPage() {
-  const { ledger } = useLedger();
-  if (!ledger) return <LoadingScreen />;
-  return <Onboarding ledger={ledger} />;
+  return <LedgerView>{(ledger) => <Onboarding ledger={ledger} />}</LedgerView>;
 }
 
 function Onboarding({ ledger }: { ledger: Ledger }) {
