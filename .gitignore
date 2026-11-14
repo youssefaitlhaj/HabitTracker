@@ -15,3 +15,6 @@ dist/
 *firebase-adminsdk*.json
 *service-account*.json
 *serviceAccount*.json
+
+# Firebase emulator logs
+*-debug.log
