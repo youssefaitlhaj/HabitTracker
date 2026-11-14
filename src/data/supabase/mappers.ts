@@ -104,7 +104,10 @@ export interface TaskRow {
   id: string;
   user_id?: string;
   title: string;
-  date: string;
+  notes: string | null;
+  date: string | null;
+  time: string | null;
+  severity: Task['severity'];
   done_on: string | null;
   created_at: string;
   updated_at: string;
@@ -113,7 +116,10 @@ export interface TaskRow {
 export const taskFromRow = (row: TaskRow): Task => ({
   id: row.id,
   title: row.title,
+  notes: row.notes ?? '',
   date: row.date,
+  time: row.time,
+  severity: row.severity,
   doneOn: row.done_on,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -123,7 +129,10 @@ export const taskToRow = (task: Task, userId: string): TaskRow => ({
   id: task.id,
   user_id: userId,
   title: task.title,
+  notes: task.notes,
   date: task.date,
+  time: task.time,
+  severity: task.severity,
   done_on: task.doneOn,
   created_at: task.createdAt,
   updated_at: task.updatedAt,

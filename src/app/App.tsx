@@ -10,6 +10,7 @@ import { LegalPage, NotFoundPage } from '@/features/legal/LegalPage';
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage';
 import { ProgressPage } from '@/features/progress/ProgressPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { TasksPage } from '@/features/tasks/TasksPage';
 import { TodayPage } from '@/features/today/TodayPage';
 import { BackendProvider } from '@/state/session';
 import { ThemeProvider } from '@/ui/theme';
@@ -46,6 +47,7 @@ export function App({ backend }: { backend: Backend }) {
                 <Route path="/welcome" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
                 <Route element={<RequireAuth><FirstRunGate><AppShell /></FirstRunGate></RequireAuth>}>
                   <Route index element={<TodayPage />} />
+                  <Route path="tasks" element={<TasksPage />} />
                   <Route path="progress" element={<ProgressPage />} />
                   <Route path="habits" element={<HabitsPage />} />
                   <Route path="habits/:id" element={<HabitDetailPage />} />

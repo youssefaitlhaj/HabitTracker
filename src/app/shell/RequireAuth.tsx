@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { HabitEditorProvider } from '@/features/habits/HabitEditor';
+import { TaskDialogsProvider } from '@/features/tasks/TaskDialogs';
 import { useHabits, useProfile } from '@/state/ledger';
 import { useRefreshLedger } from '@/state/mutations';
 import { useRepos, useSession } from '@/state/session';
@@ -15,8 +16,10 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   if (!session) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return (
     <HabitEditorProvider>
-      <SignedInEffects />
-      {children}
+      <TaskDialogsProvider>
+        <SignedInEffects />
+        {children}
+      </TaskDialogsProvider>
     </HabitEditorProvider>
   );
 }

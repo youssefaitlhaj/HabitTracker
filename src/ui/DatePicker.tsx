@@ -8,8 +8,11 @@ import { Icon } from './Icon';
 
 interface DatePickerProps {
   id?: string;
-  value: LocalDate;
+  /** Null shows "No date" (only meaningful together with onClear). */
+  value: LocalDate | null;
   onChange: (date: LocalDate) => void;
+  /** Makes the date optional: adds a Clear button. */
+  onClear?: () => void;
   today: LocalDate;
   weekStart: WeekStart;
   min?: LocalDate;
@@ -22,9 +25,9 @@ interface DatePickerProps {
  * Styled date picker (no browser default popup), built on CalendarGrid.
  * The calendar opens inline below the field so scrolling sheets and dialogs never clip it.
  */
-export function DatePicker({ id, value, onChange, today, weekStart, min, max, invalid, describedBy }: DatePickerProps) {
+export function DatePicker({ id, value, onChange, onClear, today, weekStart, min, max, invalid, describedBy }: DatePickerProps) {
   const [open, setOpen] = useState(false);
-  const [month, setMonth] = useState(startOfMonth(value));
+  const [month, setMonth] = useState(startOfMonth(value ?? today));
   const root = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
 
@@ -61,15 +64,19 @@ export function DatePicker({ id, value, onChange, today, weekStart, min, max, in
         aria-expanded={open}
         aria-describedby={describedBy}
         onClick={() => {
-          setMonth(startOfMonth(value));
+          setMonth(startOfMonth(value ?? today));
           setOpen(!open);
         }}
         className={fieldClass(invalid, cx('flex h-12 items-center justify-between gap-2 text-left', open && 'border-whisky'))}
       >
-        <span>
-          {formatDate(value, { weekday: 'short' })}, {formatLong(value)}
-          {value === today && <span className="text-muted"> (today)</span>}
-        </span>
+        {value ? (
+          <span>
+            {formatDate(value, { weekday: 'short' })}, {formatLong(value)}
+            {value === today && <span className="text-muted"> (today)</span>}
+          </span>
+        ) : (
+          <span className="text-muted">No date</span>
+        )}
         <Icon name="calendar" className="text-whisky" />
       </button>
       {open && (
@@ -118,9 +125,22 @@ export function DatePicker({ id, value, onChange, today, weekStart, min, max, in
             <button type="button" disabled={!allowed(today)} onClick={() => pick(today)} className="min-h-9 px-2.5 font-semibold text-whisky disabled:opacity-40">
               Today
             </button>
-            <button type="button" onClick={() => setOpen(false)} className="min-h-9 px-2.5 font-semibold text-muted">
-              Close
-            </button>
+            {onClear && value ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onClear();
+                  setOpen(false);
+                }}
+                className="min-h-9 px-2.5 font-semibold text-muted"
+              >
+                Clear date
+              </button>
+            ) : (
+              <button type="button" onClick={() => setOpen(false)} className="min-h-9 px-2.5 font-semibold text-muted">
+                Close
+              </button>
+            )}
           </div>
         </div>
       )}

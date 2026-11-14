@@ -19,7 +19,12 @@ function snapshot(): Snapshot {
     habits: [a],
     checkins: [{ habitId: ID_A, date: '2026-11-09' }],
     notes: [{ id: NOTE, habitId: ID_A, date: '2026-11-09', text: 'Rainy', createdAt: '2026-11-09T08:00:00Z' }],
-    tasks: [{ id: TASK, title: 'Call the bank', date: '2026-11-09', doneOn: null, createdAt: '2026-11-09T08:00:00Z', updatedAt: '2026-11-09T08:00:00Z' }],
+    tasks: [
+      {
+        id: TASK, title: 'Call the bank', notes: 'Ask about fees', date: '2026-11-09', time: '10:00', severity: 'high',
+        doneOn: null, createdAt: '2026-11-09T08:00:00Z', updatedAt: '2026-11-09T08:00:00Z',
+      },
+    ],
   };
 }
 
@@ -34,6 +39,13 @@ describe('export and import', () => {
       expect(result.snapshot).toEqual(original);
       expect(result.summary).toEqual({ habits: 1, checkins: 1, notes: 1, tasks: 1 });
     }
+  });
+
+  it('imports tasks saved before notes, time and severity existed', () => {
+    const file = buildExport(snapshot(), 'x');
+    const legacy = { ...file, tasks: file.tasks.map(({ notes: _n, time: _t, severity: _s, ...t }) => t) };
+    const result = parseImport(JSON.stringify(legacy));
+    expect(result.ok && result.snapshot.tasks[0]).toMatchObject({ notes: '', time: null, severity: null });
   });
 
   it('still imports exports made before tasks existed', () => {

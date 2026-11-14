@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { addDays, endOfWeek, formatDate, formatWeekday, startOfWeek, weekRows } from '@/domain/date';
+import { endOfWeek, formatDate, formatWeekday, startOfWeek, weekRows } from '@/domain/date';
 import { currentSchedule, isArchived, versionOn } from '@/domain/schedule';
 import type { Habit, LocalDate } from '@/domain/types';
 import { HabitCard } from '@/features/habits/HabitCard';
@@ -13,12 +13,33 @@ import type { Ledger } from '@/state/ledger';
 import { Button } from '@/ui/Button';
 import { CalendarGrid } from '@/ui/CalendarGrid';
 import { cx } from '@/ui/cx';
-import { Bars, EmptyState, PageHeader, ProgressRing, SectionTitle } from '@/ui/Display';
+import { Avatar, EmptyState, PageHeader, ProgressRing, SectionTitle } from '@/ui/Display';
 import { Icon } from '@/ui/Icon';
 import { tokenColor } from '@/ui/theme';
 import { useToast } from '@/ui/Toast';
 import { groupHabits } from './groups';
-import { TasksSection } from './TasksSection';
+import { tasksForToday } from '@/domain/tasks';
+import { useTaskDialogs } from '@/features/tasks/TaskDialogs';
+import { TasksSummaryCard, TodoPanel } from '@/features/tasks/TodoPanel';
+import { Segmented } from '@/ui/Choice';
+
+/** Header actions: add buttons on larger screens; on phones, the profile shortcut (Settings left the tab bar). */
+function TodayActions({ ledger }: { ledger: Ledger }) {
+  const tasks = useTaskDialogs();
+  return (
+    <>
+      <div className="hidden gap-2 tablet:flex">
+        <Button variant="secondary" icon="plus" onClick={() => tasks.edit(undefined, { date: ledger.today })}>
+          Task
+        </Button>
+        <NewHabitButton>Habit</NewHabitButton>
+      </div>
+      <Link to="/settings" aria-label="Profile and settings" className="tablet:hidden">
+        <Avatar url={ledger.profile.avatarUrl} name={ledger.profile.name || ledger.profile.email} size={44} />
+      </Link>
+    </>
+  );
+}
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -36,6 +57,10 @@ function TodayView({ ledger }: { ledger: Ledger }) {
   const editor = useHabitEditor();
   const celebrating = useCelebration(ledger);
 
+  const [tab, setTab] = useState<'habits' | 'tasks'>('habits');
+  const tasksToday = tasksForToday(ledger.tasks, today);
+  const openTasks = tasksToday.overdue.length + tasksToday.today.length;
+
   const groups = groupHabits(habits, stats, date);
   const summary = stats.daySummary(today);
   const left = summary.scheduled - summary.done;
@@ -43,92 +68,101 @@ function TodayView({ ledger }: { ledger: Ledger }) {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader eyebrow={formatWeekday(today)} title={greeting()} actions={<NewHabitButton className="hidden tablet:inline-flex" />} />
+      <PageHeader eyebrow={formatWeekday(today)} title={greeting()} actions={<TodayActions ledger={ledger} />} />
 
-      <div className="flex flex-wrap gap-4">
-        <section className="card flex flex-[1_1_300px] items-center gap-5 p-5 tablet:p-6" aria-label="Today's progress">
-          <ProgressRing ratio={summary.scheduled ? summary.ratio : 0} size={124} stroke={13} track={tokenColor('heat-0')} color={tokenColor('whisky')} celebrate={celebrating}>
-            <span className="font-display text-[32px] leading-none">{Math.round(summary.ratio * 100)}%</span>
+      {/* Phones: two compact cards (the Habits / Tasks switch already shows habit progress). */}
+      <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 tablet:gap-4">
+        <section className="card hidden items-center gap-5 p-5 tablet:flex tablet:p-6" aria-label="Today's progress">
+          <ProgressRing ratio={summary.scheduled ? summary.ratio : 0} size={104} stroke={12} track={tokenColor('heat-0')} color={tokenColor('whisky')} celebrate={celebrating}>
+            <span className="font-display text-[28px] leading-none">{Math.round(summary.ratio * 100)}%</span>
             <span className="mt-1 text-xs text-muted">done</span>
           </ProgressRing>
           <div className="flex flex-col gap-1.5">
-            <p className="eyebrow m-0">Today</p>
+            <p className="eyebrow m-0">Habits</p>
             <p className="m-0 font-display text-[28px]">
               {summary.done} of {summary.scheduled}
             </p>
             <p className="m-0 text-sm text-muted">
-              {summary.scheduled === 0 ? 'Nothing scheduled today.' : left === 0 ? 'Every habit done today.' : `${left} ${left === 1 ? 'habit' : 'habits'} left for today`}
+              {summary.scheduled === 0 ? 'Nothing scheduled today.' : left === 0 ? 'Every habit done today.' : `${left} ${left === 1 ? 'habit' : 'habits'} left`}
             </p>
           </div>
         </section>
 
-        <section className="flex flex-[1_1_220px] flex-col justify-between gap-3.5 rounded-card bg-cask p-5 text-on-cask tablet:p-6" aria-label="Perfect-day streak">
-          <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-on-cask-muted">Perfect-day streak</p>
-          <p className="m-0 font-display text-[44px] leading-none tablet:text-[60px]">
+        <section className="flex flex-col justify-between gap-2 rounded-card bg-cask p-4 text-on-cask tablet:gap-3.5 tablet:p-6" aria-label="Perfect-day streak">
+          <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-on-cask-muted tablet:text-xs">Perfect-day streak</p>
+          <p className="m-0 font-display text-[32px] leading-none tablet:text-[52px]">
             {stats.perfectDayStreak()}
-            <span className="ml-2 text-xl text-amber">days</span>
+            <span className="ml-1.5 text-base text-amber tablet:ml-2 tablet:text-xl">days</span>
           </p>
-          <p className="m-0 text-sm text-cask-soft">Finish every habit today to keep it going</p>
+          <p className="m-0 hidden text-sm text-cask-soft tablet:block">Finish every habit today to keep it going</p>
         </section>
 
-        <section className="card hidden flex-[1_1_280px] flex-col gap-3.5 p-5 tablet:flex tablet:p-6" aria-label="Last 7 days">
-          <p className="eyebrow m-0">Last 7 days</p>
-          <Bars
-            data={Array.from({ length: 7 }, (_, i) => {
-              const d = addDays(today, i - 6);
-              const s = stats.daySummary(d);
-              return { key: d, label: formatDate(d, { weekday: 'narrow' }), value: s.done, max: Math.max(1, s.scheduled), highlight: d === today };
-            })}
-          />
-        </section>
+        <TasksSummaryCard ledger={ledger} />
       </div>
 
-      <WeekStrip ledger={ledger} date={date} onPick={setDate} />
+      <Segmented
+        stretch
+        className="tablet:hidden"
+        label="Show"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'habits', label: `Habits · ${summary.done} of ${summary.scheduled}` },
+          { value: 'tasks', label: `Tasks · ${openTasks} open` },
+        ]}
+      />
 
-      {!hasHabits ? (
-        <EmptyState icon="calendar" title="No habits yet" action={<Button icon="plus" onClick={() => editor.open()}>Add your first habit</Button>}>
-          Start with one small thing you can do every day.
-        </EmptyState>
-      ) : (
-        <>
-          <HabitGroup
-            title={date === today ? 'Your habits' : `Habits on ${formatWeekday(date)}`}
-            aside={`${groups.due.filter((h) => stats.isDone(h.id, date)).length} done · ${groups.due.filter((h) => !stats.isDone(h.id, date)).length} to go`}
-            habits={groups.due}
-            ledger={ledger}
-            date={date}
-            detail={(h) => [describeSchedule(versionOn(h, date) ?? currentSchedule(h)), describeRest(currentSchedule(h))].filter(Boolean).join(' · ')}
-          />
-          <HabitGroup
-            title="This week"
-            habits={groups.weekly}
-            ledger={ledger}
-            date={date}
-            detail={(h) => {
-              const p = stats.weekProgress(h, date);
-              return p ? `${p.done} of ${p.target} this week${p.done >= p.target ? ' · target met' : ''}` : '';
-            }}
-          />
-          {groups.notToday.length > 0 && (
-            <details className="group rounded-card border border-line bg-surface px-5">
-              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between font-semibold">
-                Not today ({groups.notToday.length})
-                <Icon name="chevronDown" className="transition-transform group-open:rotate-180" />
-              </summary>
-              <ul className="m-0 flex list-none flex-col gap-1 p-0 pb-4">
-                {groups.notToday.map((h) => (
-                  <li key={h.id} className="flex justify-between gap-3 text-sm">
-                    <Link to={`/habits/${h.id}`}>{h.name}</Link>
-                    <span className="text-muted">{describeSchedule(currentSchedule(h))}</span>
-                  </li>
-                ))}
-              </ul>
-            </details>
+      {/* Habits left, to-do right (design: TasksTodaySplit); one at a time on phones. */}
+      <div className="grid items-start gap-6 tablet:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]">
+        <div className={cx('min-w-0 flex-col gap-6', tab === 'tasks' ? 'hidden tablet:flex' : 'flex')}>
+          <WeekStrip ledger={ledger} date={date} onPick={setDate} />
+
+          {!hasHabits ? (
+            <EmptyState icon="calendar" title="No habits yet" action={<Button icon="plus" onClick={() => editor.open()}>Add your first habit</Button>}>
+              Start with one small thing you can do every day.
+            </EmptyState>
+          ) : (
+            <>
+              <HabitGroup
+                title={date === today ? 'Habits' : `Habits on ${formatWeekday(date)}`}
+                aside={`${groups.due.filter((h) => stats.isDone(h.id, date)).length} done · ${groups.due.filter((h) => !stats.isDone(h.id, date)).length} to go`}
+                habits={groups.due}
+                ledger={ledger}
+                date={date}
+                detail={(h) => [describeSchedule(versionOn(h, date) ?? currentSchedule(h)), describeRest(currentSchedule(h))].filter(Boolean).join(' · ')}
+              />
+              <HabitGroup
+                title="This week"
+                habits={groups.weekly}
+                ledger={ledger}
+                date={date}
+                detail={(h) => {
+                  const p = stats.weekProgress(h, date);
+                  return p ? `${p.done} of ${p.target} this week${p.done >= p.target ? ' · target met' : ''}` : '';
+                }}
+              />
+              {groups.notToday.length > 0 && (
+                <details className="group rounded-card border border-line bg-surface px-5">
+                  <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between font-semibold">
+                    Not today ({groups.notToday.length})
+                    <Icon name="chevronDown" className="transition-transform group-open:rotate-180" />
+                  </summary>
+                  <ul className="m-0 flex list-none flex-col gap-1 p-0 pb-4">
+                    {groups.notToday.map((h) => (
+                      <li key={h.id} className="flex justify-between gap-3 text-sm">
+                        <Link to={`/habits/${h.id}`}>{h.name}</Link>
+                        <span className="text-muted">{describeSchedule(currentSchedule(h))}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
 
-      {date === today && <TasksSection ledger={ledger} />}
+        <TodoPanel ledger={ledger} className={cx('tablet:sticky tablet:top-6', tab === 'habits' && 'hidden tablet:flex')} />
+      </div>
 
       <div className="hidden tablet:block">
         <ProgressPanel ledger={ledger} range={resolveRange(choice, today, profile.weekStart)} onChange={setChoice} />
@@ -154,7 +188,7 @@ function HabitGroup({ title, aside, habits, ledger, date, detail }: HabitGroupPr
       <SectionTitle id={id} aside={aside}>
         {title}
       </SectionTitle>
-      <div className="grid gap-2.5 tablet:grid-cols-2 tablet:gap-4 desktop:grid-cols-3">
+      <div className="grid gap-2.5 tablet:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] tablet:gap-4">
         {habits.map((h) => (
           <HabitCard key={h.id} habit={h} ledger={ledger} date={date} detail={detail(h)} />
         ))}
