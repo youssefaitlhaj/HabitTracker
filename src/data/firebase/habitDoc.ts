@@ -18,7 +18,8 @@ export interface TaskMonthDoc {
   items: Task[];
 }
 
-export const taskMonth = (task: Task): string => task.date.slice(0, 7);
+/** Month a new task is stored under; it stays there even if its date changes later. */
+export const taskMonth = (task: Task): string => (task.date ?? task.createdAt).slice(0, 7);
 
 /** users/{uid}/devices/{deviceId}: one browser that receives reminders. */
 export interface DeviceDoc {

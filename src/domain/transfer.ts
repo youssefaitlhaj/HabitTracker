@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isLocalDate } from './date';
 import { isArchived } from './schedule';
-import { CATEGORIES, HABIT_COLORS } from './types';
+import { CATEGORIES, HABIT_COLORS, SEVERITIES } from './types';
 import type { Habit, LocalDate, Snapshot, Weekday } from './types';
 
 /** JSON export / import format, version 1 (design §8.7). */
@@ -55,13 +55,16 @@ const exportSchema = z
     notes: z.array(
       z.object({ id: z.string().uuid(), habitId: z.string().uuid(), date: localDate, text: z.string().max(500), createdAt: z.string() }),
     ),
-    /** Added 2026-11-14; older exports have no tasks. */
+    /** Added 2026-11-14 (notes, time, severity and optional date later); older exports have no tasks. */
     tasks: z
       .array(
         z.object({
           id: z.string().uuid(),
           title: z.string().trim().min(1).max(120),
-          date: localDate,
+          notes: z.string().max(2000).default(''),
+          date: localDate.nullable(),
+          time: z.string().regex(/^\d{2}:\d{2}$/).nullable().default(null),
+          severity: z.enum(SEVERITIES).nullable().default(null),
           doneOn: localDate.nullable(),
           createdAt: z.string(),
           updatedAt: z.string(),

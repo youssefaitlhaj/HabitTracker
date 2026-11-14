@@ -63,16 +63,33 @@ export interface Note {
   createdAt: string;
 }
 
-/** A one-off to-do for a day. Unfinished tasks carry over to the next days. */
+export const SEVERITIES = ['low', 'medium', 'high'] as const;
+export type Severity = (typeof SEVERITIES)[number];
+
+/** A one-off to-do. Unfinished dated tasks stay on Today as overdue until done. */
 export interface Task {
   id: string;
   title: string;
-  /** The day the task was added for. */
-  date: LocalDate;
+  /** Optional details, shown in the details popup. */
+  notes: string;
+  /** Optional due date. Undated tasks only appear in the Tasks section. */
+  date: LocalDate | null;
+  /** Optional time `HH:MM`; only set when there is a date. */
+  time: string | null;
+  severity: Severity | null;
   /** The day it was checked off, or null while open. */
   doneOn: LocalDate | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** What the task editor produces. */
+export interface TaskDraft {
+  title: string;
+  notes: string;
+  date: LocalDate | null;
+  time: string | null;
+  severity: Severity | null;
 }
 
 /** Settings the user controls; part of every export. */

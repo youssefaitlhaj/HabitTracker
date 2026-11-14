@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { todayIn } from '@/domain/date';
 import { sortHabits } from '@/domain/habits';
+import { normaliseTask } from '@/domain/tasks';
 import { LedgerStats } from '@/domain/stats';
 import type { Checkin, Habit, Note, Profile, Task } from '@/domain/types';
 import type { Repositories } from '@/data/ports';
@@ -18,7 +19,7 @@ const LOADERS: { [K in LedgerPart]: (r: Repositories) => Promise<PartData[K]> } 
   habits: (r) => r.habits.list().then(sortHabits),
   checkins: (r) => r.checkins.list(),
   notes: (r) => r.notes.list(),
-  tasks: (r) => r.tasks.list(),
+  tasks: (r) => r.tasks.list().then((list) => list.map(normaliseTask)),
 };
 
 export interface PartData {

@@ -72,7 +72,7 @@ describe('Ledger app', () => {
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' });
   });
 
-  it('adds, checks off and carries over daily tasks', async () => {
+  it('shows overdue and today’s tasks in the To-do column, with quick add and undo', async () => {
     const store = new LocalStore(localStorage);
     const backend = createLocalBackend(store);
     await backend.auth.signUp({ name: 'Sam', email: 'sam@example.com', password: TEST_PASSWORD, timezone: 'UTC' });
@@ -80,12 +80,13 @@ describe('Ledger app', () => {
     const repos = backend.repositoriesFor((await backend.auth.getSession())!);
     await repos.profiles.update({ onboarded: true });
     const stamp = '2020-01-06T08:00:00Z';
-    await repos.tasks.save({ id: 'old', title: 'Call the bank', date: '2020-01-06', doneOn: null, createdAt: stamp, updatedAt: stamp });
+    await repos.tasks.save({ id: 'old', title: 'Call the bank', notes: '', date: '2020-01-06', time: null, severity: null, doneOn: null, createdAt: stamp, updatedAt: stamp });
 
     const user = userEvent.setup();
     render(<App backend={backend} />);
     expect(await screen.findByText('Call the bank')).toBeInTheDocument();
-    expect(screen.getByText('From Mon 6 Jan')).toBeInTheDocument();
+    expect(screen.getByText('Overdue')).toBeInTheDocument();
+    expect(screen.getByText('Mon 6 Jan')).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Add a task for today'), 'Buy oat milk{Enter}');
     await user.click(await screen.findByRole('button', { name: 'Check off Buy oat milk' }));
@@ -93,6 +94,42 @@ describe('Ledger app', () => {
 
     await user.click(within(screen.getByRole('status')).getByRole('button', { name: 'Undo' }));
     expect(await screen.findByRole('button', { name: 'Check off Buy oat milk' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('creates, shows, edits and deletes tasks in the Tasks section', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await signUpAndSkipSetup(user);
+    await user.click((await screen.findAllByRole('link', { name: /Tasks/ }))[0]!);
+    await user.click((await screen.findAllByRole('button', { name: 'New task' }))[0]!);
+
+    let dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Add task' }));
+    expect(within(dialog).getByText('Give the task a name.')).toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText('Name'), 'Renew passport');
+    await user.type(within(dialog).getByLabelText(/Notes/), 'Bring two photos');
+    await user.click(within(dialog).getByRole('button', { name: 'High' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Add task' }));
+
+    expect(await screen.findByText('No date · 1')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Task list' })).getByText('High')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Details of Renew passport' }));
+    dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('Bring two photos')).toBeInTheDocument();
+    expect(within(dialog).getByText('High severity')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Edit' }));
+
+    dialog = await screen.findByRole('dialog');
+    await user.clear(within(dialog).getByLabelText('Name'));
+    await user.type(within(dialog).getByLabelText('Name'), 'Renew passport today');
+    await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Renew passport today')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Delete Renew passport today' }));
+    expect(screen.queryByText('Renew passport today')).not.toBeInTheDocument();
+    await user.click(within(screen.getByRole('status')).getByRole('button', { name: 'Undo' }));
+    expect(await screen.findByText('Renew passport today')).toBeInTheDocument();
   });
 
   it('explains when reminders are not available on this setup', async () => {

@@ -186,9 +186,16 @@ All "today" and date logic uses the **user's time zone** from their profile.
 
 Added 2026-11-13. Each habit's reminder time sends a web push notification when the habit is scheduled that day and not done yet (weekly habits: until the weekly target is met), at most once per habit per day, and never more than 3 hours late. Reminders are turned on per device in Settings › Notifications (on iPhone, only after adding Ledger to the Home Screen). A GitHub Actions job checks every 5 minutes, using the same stats rules as the app (`src/domain/reminders.ts`). The weekly summary email is not built.
 
-### 8.6b Daily tasks (added 2026-11-14)
+### 8.6b Tasks (daily tasks added 2026-11-14; extended into a Tasks section 2026-11-16)
 
-One-off to-dos in a "Daily tasks" section on Today, under the habits. A task belongs to the day it was added for; until it's checked off it keeps showing on later days, labelled "From <day>". Checking off, reopening and deleting all have Undo. Tasks never affect habit streaks or progress %. They are included in export/import (older exports without tasks still import).
+One task list, approved in the canvas mockups (Tasks proposal row):
+
+- **A task** has a name, optional notes, an optional date, an optional time (only with a date) and an optional severity: Low, Medium or High. Tasks never affect habit streaks or progress %.
+- **Today** is split: habits on the left, a **To-do** column on the right (quick add, Overdue, Today, Done today), and the summary row's third card shows open and overdue tasks plus what's next. On phones a **Habits / Tasks** switch shows one list at a time, with two compact summary cards above it.
+- **Tasks section** (`/tasks`, new menu item): statistics (Open, Overdue, Done this week, Done on time over 30 days, done per week for 8 weeks, open by severity), filters (All, Today, Upcoming, Overdue, No date, Done), search over names and notes, and a list grouped Overdue / Today / Upcoming / No date / Done. Each task has eye (details popup), edit and delete (with Undo).
+- **Popups** use the shared dialog style: details shows severity, date and time, notes, and Delete / Edit / Mark done; the editor has all fields.
+- **The earlier Daily tasks** are the same list: existing tasks keep their date and gain the empty new fields. Unfinished dated tasks show as **Overdue** after their date. Undated tasks appear only in the Tasks section.
+- **Phone tab bar**: Today, Tasks, +, Habits, Progress; the + asks "Task or Habit"; Settings is the profile picture on Today.
 
 ### 8.7 Export and import (JSON)
 

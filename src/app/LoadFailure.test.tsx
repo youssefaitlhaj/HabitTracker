@@ -35,6 +35,6 @@ describe('when data fails to load', () => {
 
     fail = false;
     await user.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByRole('heading', { name: 'Daily tasks' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'To-do' })).toBeInTheDocument();
   });
 });

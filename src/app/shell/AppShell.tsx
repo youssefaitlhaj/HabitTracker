@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { NewHabitButton, useHabitEditor } from '@/features/habits/HabitEditor';
+import { useTaskDialogs } from '@/features/tasks/TaskDialogs';
+import { Button } from '@/ui/Button';
+import { Dialog } from '@/ui/Dialog';
 import { useRefreshLedger } from '@/state/mutations';
 import { useBackend } from '@/state/session';
 import { PullToRefresh } from '@/ui/PullToRefresh';
@@ -23,10 +26,16 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: '/', label: 'Today', short: 'Today', icon: 'today', end: true },
+  { to: '/tasks', label: 'Tasks', short: 'Tasks', icon: 'tasks' },
   { to: '/progress', label: 'Progress', short: 'Progress', icon: 'chart' },
   { to: '/habits', label: 'All habits', short: 'Habits', icon: 'list' },
   { to: '/settings', label: 'Settings', short: 'Settings', icon: 'settings' },
 ];
+
+const byPath = (to: string) => NAV.find((n) => n.to === to)!;
+/** Phone bar: two items, the + button, two items. Settings is the profile picture on Today. */
+const BAR_LEFT = [byPath('/'), byPath('/tasks')];
+const BAR_RIGHT = [byPath('/habits'), byPath('/progress')];
 
 type Variant = 'sidebar' | 'rail' | 'bar';
 
@@ -103,8 +112,30 @@ function DemoNotice() {
   );
 }
 
+/** The phone + button: choose what to add. */
+function CreateChooser({ onClose }: { onClose: () => void }) {
+  const habits = useHabitEditor();
+  const tasks = useTaskDialogs();
+  const pick = (open: () => void) => {
+    onClose();
+    open();
+  };
+  return (
+    <Dialog open onClose={onClose} title="Add" size="sm">
+      <div className="grid grid-cols-2 gap-3 pb-2">
+        <Button size="lg" icon="tasks" variant="secondary" onClick={() => pick(() => tasks.edit())}>
+          Task
+        </Button>
+        <Button size="lg" icon="plus" onClick={() => pick(() => habits.open())}>
+          Habit
+        </Button>
+      </div>
+    </Dialog>
+  );
+}
+
 export function AppShell() {
-  const editor = useHabitEditor();
+  const [choosing, setChoosing] = useState(false);
   const refresh = useRefreshLedger();
   const toast = useToast();
   const pullToRefresh = async () => {
@@ -118,7 +149,6 @@ export function AppShell() {
     return () => document.body.classList.remove('has-bottom-nav');
   }, []);
 
-  const [first, second, ...rest] = NAV;
 
   return (
     <PullToRefresh onRefresh={pullToRefresh}>
@@ -152,19 +182,20 @@ export function AppShell() {
           aria-label="Main"
           className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 items-center border-t border-line bg-surface px-2 pt-1.5 pb-[calc(10px+env(safe-area-inset-bottom))] tablet:hidden"
         >
-          <NavLinks variant="bar" items={[first!, second!]} />
+          <NavLinks variant="bar" items={BAR_LEFT} />
           <span className="flex justify-center">
             <button
               type="button"
-              aria-label="New habit"
-              onClick={() => editor.open()}
+              aria-label="Add a habit or task"
+              onClick={() => setChoosing(true)}
               className="-mt-5 flex h-14 w-14 items-center justify-center rounded-[18px] bg-whisky text-on-accent shadow-fab"
             >
               <Icon name="plus" size={24} strokeWidth={2.5} />
             </button>
           </span>
-          <NavLinks variant="bar" items={rest} />
+          <NavLinks variant="bar" items={BAR_RIGHT} />
         </nav>
+        {choosing && <CreateChooser onClose={() => setChoosing(false)} />}
       </div>
     </PullToRefresh>
   );

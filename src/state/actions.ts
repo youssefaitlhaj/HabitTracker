@@ -3,8 +3,8 @@ import { newId, nowIso } from '@/data/defaults';
 import type { ProfilePatch } from '@/data/ports';
 import { formatShort } from '@/domain/date';
 import { archiveHabit, restoreHabit, sortHabits } from '@/domain/habits';
-import { createTask, setTaskDone } from '@/domain/tasks';
-import type { Checkin, Habit, LocalDate, Note, Task } from '@/domain/types';
+import { applyTaskEdit, createTask, emptyTaskDraft, setTaskDone } from '@/domain/tasks';
+import type { Checkin, Habit, LocalDate, Note, Task, TaskDraft } from '@/domain/types';
 import { useToast } from '@/ui/Toast';
 import { useOptimistic } from './mutations';
 
@@ -117,7 +117,16 @@ export function useTaskActions() {
   const undo = (task: Task) => ({ label: 'Undo', run: () => save.mutate(task) });
 
   return {
-    add: (title: string, today: LocalDate) => save.mutate(createTask(title, today, newId(), nowIso())),
+    /** Quick add from Today: a task for today with just a name. */
+    add: (title: string, today: LocalDate) => save.mutate(createTask({ ...emptyTaskDraft(today), title }, newId(), nowIso())),
+    create: (draft: TaskDraft) => {
+      save.mutate(createTask(draft, newId(), nowIso()));
+      toast.show(`“${draft.title.trim()}” added.`, { kind: 'success' });
+    },
+    update: (task: Task, draft: TaskDraft) => {
+      save.mutate(applyTaskEdit(task, draft, nowIso()));
+      toast.show('Task saved.', { kind: 'success', action: undo(task) });
+    },
     setDone: (task: Task, done: boolean, today: LocalDate) => {
       save.mutate(setTaskDone(task, done, today, nowIso()));
       toast.show(done ? `“${task.title}” done.` : `“${task.title}” is open again.`, { kind: done ? 'success' : 'info', action: undo(task) });

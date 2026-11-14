@@ -327,9 +327,15 @@ class FirebaseTasks extends FirebaseRepository implements TaskRepository {
     return this.updateMonth(task, (items) => items.filter((t) => t.id !== task.id));
   }
 
+  /** The month document already holding this task, or the one a new task goes into. */
+  private async monthOf(task: Task): Promise<string> {
+    const months = await this.data.taskMonths();
+    return months.find((m) => m.items.some((t) => t.id === task.id))?.month ?? taskMonth(task);
+  }
+
   /** Read-modify-write of one month in a transaction, so two quick changes never overwrite each other. */
-  private updateMonth(task: Task, change: (items: Task[]) => Task[]): Promise<void> {
-    const ref = this.data.taskMonthRef(taskMonth(task));
+  private async updateMonth(task: Task, change: (items: Task[]) => Task[]): Promise<void> {
+    const ref = this.data.taskMonthRef(await this.monthOf(task));
     return friendly(
       runTransaction(this.data.db, async (tx) => {
         const snap = await tx.get(ref);
