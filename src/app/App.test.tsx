@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createLocalBackend } from '@/data/local/localBackend';
 import { LocalStore } from '@/data/local/localStore';
 import { openSettings, resetBrowser, signUp, signUpAndSkipSetup } from '@/test/appFlows';
@@ -60,6 +60,16 @@ describe('Ledger app', () => {
     expect(await screen.findByRole('heading', { name: 'This week' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Practice guitar' })).toBeInTheDocument();
     expect(screen.getByText(/0 of 3 this week/)).toBeInTheDocument();
+  });
+
+  it('starts each section at the top of the page', async () => {
+    const user = userEvent.setup();
+    const scrollTo = vi.spyOn(window, 'scrollTo');
+    renderApp();
+    await signUpAndSkipSetup(user);
+    scrollTo.mockClear();
+    await user.click((await screen.findAllByRole('link', { name: /Progress/ }))[0]!);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' });
   });
 
   it('explains when reminders are not available on this setup', async () => {

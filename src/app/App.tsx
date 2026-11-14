@@ -16,6 +16,7 @@ import { ThemeProvider } from '@/ui/theme';
 import { ToastProvider } from '@/ui/Toast';
 import { AppShell } from './shell/AppShell';
 import { FirstRunGate, RequireAuth } from './shell/RequireAuth';
+import { ScrollToTop } from './shell/ScrollToTop';
 
 export function App({ backend }: { backend: Backend }) {
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } }));
@@ -25,6 +26,7 @@ export function App({ backend }: { backend: Backend }) {
         <ToastProvider>
           <BackendProvider backend={backend}>
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <ScrollToTop />
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />

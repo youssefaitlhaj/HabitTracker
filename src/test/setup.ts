@@ -26,6 +26,8 @@ class MemoryStorage implements Storage {
   }
 }
 
+window.scrollTo = (() => {}) as typeof window.scrollTo;
+
 for (const name of ['localStorage', 'sessionStorage'] as const) {
   Object.defineProperty(globalThis, name, { value: new MemoryStorage(), configurable: true, writable: true });
 }
