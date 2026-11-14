@@ -10,6 +10,7 @@ Design: [`docs/superpowers/specs/2026-11-10-ledger-habit-tracker-design.md`](doc
 npm install
 npm run dev        # http://localhost:5173
 npm test           # unit + end-to-end tests (Vitest)
+npm run test:rules # Firestore security rules in the Firebase emulator (needs Java)
 npm run build      # type-check + production build into dist/
 ```
 
