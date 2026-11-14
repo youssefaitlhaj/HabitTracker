@@ -1,4 +1,4 @@
-import type { Checkin, Habit, Note } from '../../domain/types';
+import type { Checkin, Habit, Note, Task } from '../../domain/types';
 
 /**
  * Firestore document shapes, shared by the app (firebaseBackend) and the reminder job
@@ -12,6 +12,13 @@ export interface HabitDoc extends Habit {
   checkins?: string[];
   notes?: StoredNote[];
 }
+
+/** users/{uid}/taskMonths/{YYYY-MM}: the tasks added for days in that month. */
+export interface TaskMonthDoc {
+  items: Task[];
+}
+
+export const taskMonth = (task: Task): string => task.date.slice(0, 7);
 
 /** users/{uid}/devices/{deviceId}: one browser that receives reminders. */
 export interface DeviceDoc {

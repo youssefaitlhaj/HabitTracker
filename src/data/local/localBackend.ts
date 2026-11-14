@@ -13,10 +13,11 @@ import type {
   SignInInput,
   SignUpInput,
   SnapshotRepository,
+  TaskRepository,
 } from '../ports';
 import { avatarDataUrl } from '@/lib/image';
 import { hashPassword, LocalStore, type LocalUserDoc } from './localStore';
-import type { Checkin, Habit, Note, Profile, Snapshot } from '@/domain/types';
+import type { Checkin, Habit, Note, Profile, Snapshot, Task } from '@/domain/types';
 
 /**
  * Demo backend: same contracts as Supabase, data kept in this browser.
@@ -70,6 +71,7 @@ class LocalAuth implements AuthService {
       habits: [],
       checkins: [],
       notes: [],
+      tasks: [],
     };
     this.store.write(doc);
     return { needsConfirmation: false };
@@ -233,14 +235,28 @@ class LocalNotes extends LocalRepository implements NoteRepository {
   }
 }
 
+class LocalTasks extends LocalRepository implements TaskRepository {
+  async list(): Promise<Task[]> {
+    return this.doc.tasks ?? [];
+  }
+
+  save(task: Task): Promise<void> {
+    return this.change((d) => ({ ...d, tasks: [...(d.tasks ?? []).filter((t) => t.id !== task.id), task] }));
+  }
+
+  remove(task: Task): Promise<void> {
+    return this.change((d) => ({ ...d, tasks: (d.tasks ?? []).filter((t) => t.id !== task.id) }));
+  }
+}
+
 class LocalSnapshots extends LocalRepository implements SnapshotRepository {
   async load(): Promise<Snapshot> {
     const d = this.doc;
-    return { profile: d.settings, habits: d.habits, checkins: d.checkins, notes: d.notes };
+    return { profile: d.settings, habits: d.habits, checkins: d.checkins, notes: d.notes, tasks: d.tasks ?? [] };
   }
 
   replace(s: Snapshot): Promise<void> {
-    return this.change((d) => ({ ...d, settings: s.profile, habits: s.habits, checkins: s.checkins, notes: s.notes }));
+    return this.change((d) => ({ ...d, settings: s.profile, habits: s.habits, checkins: s.checkins, notes: s.notes, tasks: s.tasks }));
   }
 }
 
@@ -255,6 +271,7 @@ export function createLocalBackend(store = new LocalStore()): Backend {
         habits: new LocalHabits(store, session.userId),
         checkins: new LocalCheckins(store, session.userId),
         notes: new LocalNotes(store, session.userId),
+        tasks: new LocalTasks(store, session.userId),
         snapshots: new LocalSnapshots(store, session.userId),
       };
     },

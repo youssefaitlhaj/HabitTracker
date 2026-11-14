@@ -3,13 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { todayIn } from '@/domain/date';
 import { sortHabits } from '@/domain/habits';
 import { LedgerStats } from '@/domain/stats';
-import type { Checkin, Habit, Note, Profile } from '@/domain/types';
+import type { Checkin, Habit, Note, Profile, Task } from '@/domain/types';
 import type { Repositories } from '@/data/ports';
 import { useRepos } from './session';
 
 /** Read side: one query per collection, plus derived "today" and stats. */
 
-export type LedgerPart = 'profile' | 'habits' | 'checkins' | 'notes';
+export type LedgerPart = 'profile' | 'habits' | 'checkins' | 'notes' | 'tasks';
 
 export const ledgerKey = (userId: string, part: LedgerPart) => ['ledger', userId, part] as const;
 
@@ -18,6 +18,7 @@ const LOADERS: { [K in LedgerPart]: (r: Repositories) => Promise<PartData[K]> } 
   habits: (r) => r.habits.list().then(sortHabits),
   checkins: (r) => r.checkins.list(),
   notes: (r) => r.notes.list(),
+  tasks: (r) => r.tasks.list(),
 };
 
 export interface PartData {
@@ -25,6 +26,7 @@ export interface PartData {
   habits: Habit[];
   checkins: Checkin[];
   notes: Note[];
+  tasks: Task[];
 }
 
 function usePart<K extends LedgerPart>(part: K) {
@@ -36,6 +38,7 @@ export const useProfile = () => usePart('profile');
 export const useHabits = () => usePart('habits');
 export const useCheckins = () => usePart('checkins');
 export const useNotes = () => usePart('notes');
+export const useTasks = () => usePart('tasks');
 
 /** Today's date in the user's time zone, refreshed every minute so midnight rolls over. */
 export function useToday(timezone: string | undefined): string {
@@ -54,6 +57,7 @@ export interface Ledger {
   habits: Habit[];
   checkins: Checkin[];
   notes: Note[];
+  tasks: Task[];
   today: string;
   stats: LedgerStats;
 }
@@ -64,10 +68,11 @@ export function useLedger(): { ledger: Ledger | null; error: Error | null } {
   const habits = useHabits();
   const checkins = useCheckins();
   const notes = useNotes();
+  const tasks = useTasks();
   const today = useToday(profile.data?.timezone);
 
   const ledger = useMemo(() => {
-    if (!profile.data || !habits.data || !checkins.data || !notes.data) return null;
+    if (!profile.data || !habits.data || !checkins.data || !notes.data || !tasks.data) return null;
     const stats = new LedgerStats({
       habits: habits.data,
       checkins: checkins.data,
@@ -75,9 +80,9 @@ export function useLedger(): { ledger: Ledger | null; error: Error | null } {
       today,
       accountCreated: todayIn(profile.data.timezone, new Date(profile.data.createdAt)),
     });
-    return { profile: profile.data, habits: habits.data, checkins: checkins.data, notes: notes.data, today, stats };
-  }, [profile.data, habits.data, checkins.data, notes.data, today]);
+    return { profile: profile.data, habits: habits.data, checkins: checkins.data, notes: notes.data, tasks: tasks.data, today, stats };
+  }, [profile.data, habits.data, checkins.data, notes.data, tasks.data, today]);
 
-  const error = (profile.error ?? habits.error ?? checkins.error ?? notes.error) as Error | null;
+  const error = (profile.error ?? habits.error ?? checkins.error ?? notes.error ?? tasks.error) as Error | null;
   return { ledger, error };
 }

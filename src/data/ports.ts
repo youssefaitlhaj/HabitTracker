@@ -1,4 +1,4 @@
-import type { Checkin, Habit, Note, Profile, ProfileSettings, Snapshot } from '@/domain/types';
+import type { Checkin, Habit, Note, Profile, ProfileSettings, Snapshot, Task } from '@/domain/types';
 
 /**
  * Ports (interfaces) the app depends on. Screens and hooks only know these;
@@ -69,6 +69,13 @@ export interface NoteRepository {
   remove(id: string): Promise<void>;
 }
 
+export interface TaskRepository {
+  list(): Promise<Task[]>;
+  /** Creates or replaces the task. */
+  save(task: Task): Promise<void>;
+  remove(task: Task): Promise<void>;
+}
+
 /** A browser's push subscription, as returned by PushSubscription.toJSON(). */
 export interface PushDevice {
   endpoint: string;
@@ -91,6 +98,7 @@ export interface Repositories {
   habits: HabitRepository;
   checkins: CheckinRepository;
   notes: NoteRepository;
+  tasks: TaskRepository;
   snapshots: SnapshotRepository;
   /** Present when the backend can send reminder notifications. */
   devices?: DeviceRepository;

@@ -1,4 +1,4 @@
-import type { Checkin, Habit, Note, ProfileSettings } from '@/domain/types';
+import type { Checkin, Habit, Note, ProfileSettings, Task } from '@/domain/types';
 import { sha256Hex } from '@/lib/hash';
 
 /** Everything the demo backend keeps for one user, stored as JSON in localStorage. */
@@ -15,6 +15,8 @@ export interface LocalUserDoc {
   habits: Habit[];
   checkins: Checkin[];
   notes: Note[];
+  /** Missing in documents created before daily tasks existed. */
+  tasks?: Task[];
 }
 
 const USERS_KEY = 'ledger.local.users';

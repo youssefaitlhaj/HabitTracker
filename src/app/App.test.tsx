@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createLocalBackend } from '@/data/local/localBackend';
 import { LocalStore } from '@/data/local/localStore';
-import { openSettings, resetBrowser, signUp, signUpAndSkipSetup } from '@/test/appFlows';
+import { openSettings, resetBrowser, signUp, signUpAndSkipSetup, TEST_PASSWORD } from '@/test/appFlows';
 import { App } from './App';
 
 /** End-to-end flows through the real screens, using the in-browser demo backend. */
@@ -70,6 +70,29 @@ describe('Ledger app', () => {
     scrollTo.mockClear();
     await user.click((await screen.findAllByRole('link', { name: /Progress/ }))[0]!);
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' });
+  });
+
+  it('adds, checks off and carries over daily tasks', async () => {
+    const store = new LocalStore(localStorage);
+    const backend = createLocalBackend(store);
+    await backend.auth.signUp({ name: 'Sam', email: 'sam@example.com', password: TEST_PASSWORD, timezone: 'UTC' });
+    await backend.auth.signIn({ email: 'sam@example.com', password: TEST_PASSWORD, remember: true });
+    const repos = backend.repositoriesFor((await backend.auth.getSession())!);
+    await repos.profiles.update({ onboarded: true });
+    const stamp = '2020-01-06T08:00:00Z';
+    await repos.tasks.save({ id: 'old', title: 'Call the bank', date: '2020-01-06', doneOn: null, createdAt: stamp, updatedAt: stamp });
+
+    const user = userEvent.setup();
+    render(<App backend={backend} />);
+    expect(await screen.findByText('Call the bank')).toBeInTheDocument();
+    expect(screen.getByText('From Mon 6 Jan')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Add a task for today'), 'Buy oat milk{Enter}');
+    await user.click(await screen.findByRole('button', { name: 'Check off Buy oat milk' }));
+    expect(await screen.findByRole('button', { name: 'Reopen Buy oat milk' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(within(screen.getByRole('status')).getByRole('button', { name: 'Undo' }));
+    expect(await screen.findByRole('button', { name: 'Check off Buy oat milk' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('explains when reminders are not available on this setup', async () => {

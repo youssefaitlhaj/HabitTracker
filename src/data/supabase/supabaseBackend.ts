@@ -14,6 +14,7 @@ import type {
   SignInInput,
   SignUpInput,
   SnapshotRepository,
+  TaskRepository,
 } from '../ports';
 import {
   checkinFromRow,
@@ -23,10 +24,13 @@ import {
   profileFromRow,
   profilePatchToRow,
   settingsFromRow,
+  taskFromRow,
+  taskToRow,
   type HabitRow,
   type ProfileRow,
+  type TaskRow,
 } from './mappers';
-import type { Checkin, Habit, Note, Profile, Snapshot } from '@/domain/types';
+import type { Checkin, Habit, Note, Profile, Snapshot, Task } from '@/domain/types';
 
 interface SupabaseResult<T> {
   data?: T | null;
@@ -204,23 +208,38 @@ class SupabaseNotes extends SupabaseRepository implements NoteRepository {
   }
 }
 
+class SupabaseTasks extends SupabaseRepository implements TaskRepository {
+  async list(): Promise<Task[]> {
+    return unwrap(await this.db.from('tasks').select('*').returns<TaskRow[]>()).map(taskFromRow);
+  }
+
+  async save(task: Task): Promise<void> {
+    unwrap(await this.db.from('tasks').upsert(taskToRow(task, this.session.userId)));
+  }
+
+  async remove(task: Task): Promise<void> {
+    unwrap(await this.db.from('tasks').delete().eq('id', task.id));
+  }
+}
+
 class SupabaseSnapshots extends SupabaseRepository implements SnapshotRepository {
   constructor(
     db: SupabaseClient,
     session: Session,
-    private readonly parts: { habits: HabitRepository; checkins: CheckinRepository; notes: NoteRepository },
+    private readonly parts: { habits: HabitRepository; checkins: CheckinRepository; notes: NoteRepository; tasks: TaskRepository },
   ) {
     super(db, session);
   }
 
   async load(): Promise<Snapshot> {
-    const [row, habits, checkins, notes] = await Promise.all([
+    const [row, habits, checkins, notes, tasks] = await Promise.all([
       this.db.from('profiles').select('*').eq('id', this.session.userId).single<ProfileRow>().then(unwrap),
       this.parts.habits.list(),
       this.parts.checkins.list(),
       this.parts.notes.list(),
+      this.parts.tasks.list(),
     ]);
-    return { profile: settingsFromRow(row), habits, checkins, notes };
+    return { profile: settingsFromRow(row), habits, checkins, notes, tasks };
   }
 
   async replace(snapshot: Snapshot): Promise<void> {
@@ -240,12 +259,14 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
       const habits = new SupabaseHabits(db, session);
       const checkins = new SupabaseCheckins(db, session);
       const notes = new SupabaseNotes(db, session);
+      const tasks = new SupabaseTasks(db, session);
       return {
         profiles: new SupabaseProfiles(db, session),
         habits,
         checkins,
         notes,
-        snapshots: new SupabaseSnapshots(db, session, { habits, checkins, notes }),
+        tasks,
+        snapshots: new SupabaseSnapshots(db, session, { habits, checkins, notes, tasks }),
       };
     },
   };

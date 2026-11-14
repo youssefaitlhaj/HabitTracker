@@ -1,4 +1,4 @@
-import type { Checkin, Habit, Note, Profile, ProfileSettings, Weekday } from '@/domain/types';
+import type { Checkin, Habit, Note, Profile, ProfileSettings, Task, Weekday } from '@/domain/types';
 import type { ProfilePatch } from '../ports';
 
 /** Row shapes returned by Supabase and their conversion to domain objects. */
@@ -99,6 +99,35 @@ export function habitFromRow(row: HabitRow): Habit {
 }
 
 export const checkinFromRow = (row: { habit_id: string; date: string }): Checkin => ({ habitId: row.habit_id, date: row.date });
+
+export interface TaskRow {
+  id: string;
+  user_id?: string;
+  title: string;
+  date: string;
+  done_on: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const taskFromRow = (row: TaskRow): Task => ({
+  id: row.id,
+  title: row.title,
+  date: row.date,
+  doneOn: row.done_on,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+export const taskToRow = (task: Task, userId: string): TaskRow => ({
+  id: task.id,
+  user_id: userId,
+  title: task.title,
+  date: task.date,
+  done_on: task.doneOn,
+  created_at: task.createdAt,
+  updated_at: task.updatedAt,
+});
 
 export const noteFromRow = (row: { id: string; habit_id: string; date: string; text: string; created_at: string }): Note => ({
   id: row.id,

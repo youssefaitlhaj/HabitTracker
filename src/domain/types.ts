@@ -63,6 +63,18 @@ export interface Note {
   createdAt: string;
 }
 
+/** A one-off to-do for a day. Unfinished tasks carry over to the next days. */
+export interface Task {
+  id: string;
+  title: string;
+  /** The day the task was added for. */
+  date: LocalDate;
+  /** The day it was checked off, or null while open. */
+  doneOn: LocalDate | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Settings the user controls; part of every export. */
 export interface ProfileSettings {
   name: string;
@@ -88,6 +100,7 @@ export interface Snapshot {
   habits: Habit[];
   checkins: Checkin[];
   notes: Note[];
+  tasks: Task[];
 }
 
 /** What the habit editor produces. */

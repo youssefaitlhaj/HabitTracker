@@ -55,6 +55,19 @@ const exportSchema = z
     notes: z.array(
       z.object({ id: z.string().uuid(), habitId: z.string().uuid(), date: localDate, text: z.string().max(500), createdAt: z.string() }),
     ),
+    /** Added 2026-11-14; older exports have no tasks. */
+    tasks: z
+      .array(
+        z.object({
+          id: z.string().uuid(),
+          title: z.string().trim().min(1).max(120),
+          date: localDate,
+          doneOn: localDate.nullable(),
+          createdAt: z.string(),
+          updatedAt: z.string(),
+        }),
+      )
+      .default([]),
   })
   .superRefine((file, ctx) => {
     const ids = new Set(file.habits.map((h) => h.id));
@@ -70,6 +83,7 @@ export interface ImportSummary {
   habits: number;
   checkins: number;
   notes: number;
+  tasks: number;
 }
 
 export function exportFileName(today: LocalDate): string {
@@ -99,11 +113,12 @@ export function buildExport(snapshot: Snapshot, now: string): ExportFile {
     })),
     checkins: snapshot.checkins,
     notes: snapshot.notes,
+    tasks: snapshot.tasks,
   };
 }
 
 export function summarise(snapshot: Snapshot): ImportSummary {
-  return { habits: snapshot.habits.length, checkins: snapshot.checkins.length, notes: snapshot.notes.length };
+  return { habits: snapshot.habits.length, checkins: snapshot.checkins.length, notes: snapshot.notes.length, tasks: snapshot.tasks.length };
 }
 
 export function parseImport(text: string): ImportResult {
@@ -137,7 +152,7 @@ function toSnapshot(file: ExportFile): Snapshot {
       days: s.days ? s.days.map((d) => WEEKDAY_NAMES.indexOf(d) as Weekday) : null,
     })),
   }));
-  return { profile: file.profile, habits, checkins: dedupeCheckins(file.checkins), notes: file.notes };
+  return { profile: file.profile, habits, checkins: dedupeCheckins(file.checkins), notes: file.notes, tasks: file.tasks };
 }
 
 function dedupeCheckins(checkins: Snapshot['checkins']): Snapshot['checkins'] {
@@ -145,22 +160,26 @@ function dedupeCheckins(checkins: Snapshot['checkins']): Snapshot['checkins'] {
   return [...seen.values()];
 }
 
+/** Adds new items and replaces existing ones only when the incoming copy is newer. */
+function mergeById<T extends { id: string; updatedAt?: string }>(current: T[], incoming: T[]): T[] {
+  const byId = new Map(current.map((x) => [x.id, x]));
+  for (const x of incoming) {
+    const existing = byId.get(x.id);
+    if (!existing || (x.updatedAt ?? '') > (existing.updatedAt ?? '')) byId.set(x.id, x);
+  }
+  return [...byId.values()];
+}
+
 /**
- * Merge (design §8.7): new habits are added, existing ones are replaced when the incoming copy
- * is newer, check-ins and notes are combined. The user's own settings are kept.
+ * Merge (design §8.7): new habits, notes and tasks are added, existing ones are replaced when
+ * the incoming copy is newer, check-ins are combined. The user's own settings are kept.
  */
 export function mergeSnapshots(current: Snapshot, incoming: Snapshot): Snapshot {
-  const habits = new Map(current.habits.map((h) => [h.id, h]));
-  for (const h of incoming.habits) {
-    const existing = habits.get(h.id);
-    if (!existing || h.updatedAt > existing.updatedAt) habits.set(h.id, h);
-  }
-  const notes = new Map(current.notes.map((n) => [n.id, n]));
-  for (const n of incoming.notes) if (!notes.has(n.id)) notes.set(n.id, n);
   return {
     profile: current.profile,
-    habits: [...habits.values()],
+    habits: mergeById(current.habits, incoming.habits),
     checkins: dedupeCheckins([...current.checkins, ...incoming.checkins]),
-    notes: [...notes.values()],
+    notes: mergeById(current.notes, incoming.notes),
+    tasks: mergeById(current.tasks, incoming.tasks),
   };
 }

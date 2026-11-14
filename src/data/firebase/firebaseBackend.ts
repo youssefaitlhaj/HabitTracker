@@ -32,6 +32,7 @@ import {
   initializeFirestore,
   setDoc,
   updateDoc,
+  runTransaction,
   writeBatch,
   type Firestore,
 } from 'firebase/firestore';
@@ -52,12 +53,13 @@ import type {
   SignInInput,
   SignUpInput,
   SnapshotRepository,
+  TaskRepository,
 } from '../ports';
 import { friendly } from './errors';
-import { checkinsOf, habitFields, notesOf, type DeviceDoc, type HabitDoc } from './habitDoc';
+import { checkinsOf, habitFields, notesOf, taskMonth, type DeviceDoc, type HabitDoc, type TaskMonthDoc } from './habitDoc';
 import { sha256Hex } from '@/lib/hash';
 import { detectTimeZone } from '@/domain/date';
-import type { Checkin, Habit, Note, Profile, ProfileSettings, Snapshot } from '@/domain/types';
+import type { Checkin, Habit, Note, Profile, ProfileSettings, Snapshot, Task } from '@/domain/types';
 import { avatarDataUrl } from '@/lib/image';
 
 /**
@@ -199,6 +201,15 @@ class UserData {
     return doc(this.db, 'users', this.uid, 'habits', id);
   }
 
+  taskMonthRef(month: string) {
+    return doc(this.db, 'users', this.uid, 'taskMonths', month);
+  }
+
+  async taskMonths(): Promise<{ month: string; items: Task[] }[]> {
+    const snap = await friendly(getDocs(collection(this.db, 'users', this.uid, 'taskMonths')));
+    return snap.docs.map((d) => ({ month: d.id, items: (d.data() as TaskMonthDoc).items ?? [] }));
+  }
+
   async habitDocs(): Promise<HabitDoc[]> {
     const snap = await friendly(getDocs(collection(this.db, 'users', this.uid, 'habits')));
     return snap.docs.map((d) => d.data() as HabitDoc);
@@ -245,6 +256,7 @@ class FirebaseProfiles extends FirebaseRepository implements ProfileRepository {
     }
     const batch = writeBatch(this.data.db);
     for (const h of await this.data.habitDocs()) batch.delete(this.data.habitRef(h.id));
+    for (const m of await this.data.taskMonths()) batch.delete(this.data.taskMonthRef(m.month));
     batch.delete(this.data.profileRef);
     await friendly(batch.commit());
     await friendly(deleteUser(user));
@@ -302,6 +314,32 @@ class FirebaseNotes extends FirebaseRepository implements NoteRepository {
   }
 }
 
+class FirebaseTasks extends FirebaseRepository implements TaskRepository {
+  async list(): Promise<Task[]> {
+    return (await this.data.taskMonths()).flatMap((m) => m.items);
+  }
+
+  save(task: Task): Promise<void> {
+    return this.updateMonth(task, (items) => [...items.filter((t) => t.id !== task.id), task]);
+  }
+
+  remove(task: Task): Promise<void> {
+    return this.updateMonth(task, (items) => items.filter((t) => t.id !== task.id));
+  }
+
+  /** Read-modify-write of one month in a transaction, so two quick changes never overwrite each other. */
+  private updateMonth(task: Task, change: (items: Task[]) => Task[]): Promise<void> {
+    const ref = this.data.taskMonthRef(taskMonth(task));
+    return friendly(
+      runTransaction(this.data.db, async (tx) => {
+        const snap = await tx.get(ref);
+        const items = snap.exists() ? (snap.data() as TaskMonthDoc).items ?? [] : [];
+        tx.set(ref, { items: change(items) } satisfies TaskMonthDoc);
+      }),
+    );
+  }
+}
+
 class FirebaseDevices extends FirebaseRepository implements DeviceRepository {
   private async ref(endpoint: string) {
     return doc(this.data.db, 'users', this.data.uid, 'devices', await sha256Hex(endpoint));
@@ -319,24 +357,28 @@ class FirebaseDevices extends FirebaseRepository implements DeviceRepository {
 
 class FirebaseSnapshots extends FirebaseRepository implements SnapshotRepository {
   async load(): Promise<Snapshot> {
-    const [profile, habits] = await Promise.all([this.data.profileDoc(), this.data.habitDocs()]);
+    const [profile, habits, months] = await Promise.all([this.data.profileDoc(), this.data.habitDocs(), this.data.taskMonths()]);
     const { name, timezone, weekStart, defaultRestDays, showStreaks, celebrate } = profile;
     return {
       profile: { name, timezone, weekStart, defaultRestDays, showStreaks, celebrate },
       habits: habits.map(habitFields),
       checkins: habits.flatMap(checkinsOf),
       notes: habits.flatMap(notesOf),
+      tasks: months.flatMap((m) => m.items),
     };
   }
 
   /** One atomic batch: everything is replaced, or nothing changes. */
   async replace(snapshot: Snapshot): Promise<void> {
-    const existing = await this.data.habitDocs();
-    if (existing.length + snapshot.habits.length + 1 > MAX_BATCH_WRITES) {
-      throw new Error('That is too many habits to import in one go.');
-    }
+    const [existing, existingMonths] = await Promise.all([this.data.habitDocs(), this.data.taskMonths()]);
+    const months = new Map<string, Task[]>();
+    for (const task of snapshot.tasks) months.set(taskMonth(task), [...(months.get(taskMonth(task)) ?? []), task]);
+    const writes = existing.length + existingMonths.length + snapshot.habits.length + months.size + 1;
+    if (writes > MAX_BATCH_WRITES) throw new Error('That is too much data to import in one go.');
     const batch = writeBatch(this.data.db);
     existing.forEach((h) => batch.delete(this.data.habitRef(h.id)));
+    existingMonths.forEach((m) => batch.delete(this.data.taskMonthRef(m.month)));
+    months.forEach((items, month) => batch.set(this.data.taskMonthRef(month), { items } satisfies TaskMonthDoc));
     for (const habit of snapshot.habits) {
       const docData: HabitDoc = {
         ...habitFields(habit),
@@ -366,6 +408,7 @@ export function createFirebaseBackend(settings: FirebaseSettings): Backend {
         habits: new FirebaseHabits(data),
         checkins: new FirebaseCheckins(data),
         notes: new FirebaseNotes(data),
+        tasks: new FirebaseTasks(data),
         snapshots: new FirebaseSnapshots(data),
         devices: new FirebaseDevices(data),
       };

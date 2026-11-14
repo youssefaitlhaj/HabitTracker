@@ -17,6 +17,7 @@ import { Icon } from '@/ui/Icon';
 import { tokenColor } from '@/ui/theme';
 import { useToast } from '@/ui/Toast';
 import { groupHabits } from './groups';
+import { TasksSection } from './TasksSection';
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -127,6 +128,8 @@ function TodayView({ ledger }: { ledger: Ledger }) {
           )}
         </>
       )}
+
+      {date === today && <TasksSection ledger={ledger} />}
 
       <div className="hidden tablet:block">
         <ProgressPanel ledger={ledger} range={resolveRange(choice, today, profile.weekStart)} onChange={setChoice} />

@@ -25,6 +25,11 @@ service cloud.firestore {
         allow read, write: if isConfirmedOwner(uid);
       }
 
+      // Daily tasks, grouped per month (document id YYYY-MM).
+      match /taskMonths/{month} {
+        allow read, write: if isConfirmedOwner(uid) && month.matches('^[0-9]{4}-[0-9]{2}$');
+      }
+
       match /habits/{habitId} {
         allow read, delete: if isConfirmedOwner(uid);
         allow create, update: if isConfirmedOwner(uid)

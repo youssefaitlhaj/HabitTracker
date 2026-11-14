@@ -6,6 +6,7 @@ import { makeHabit } from '@/test/factories';
 const ID_A = '6f1c0b1e-3c1a-4d2e-9b7a-2f9d4a1c0e01';
 const ID_B = '6f1c0b1e-3c1a-4d2e-9b7a-2f9d4a1c0e02';
 const NOTE = '6f1c0b1e-3c1a-4d2e-9b7a-2f9d4a1c0e03';
+const TASK = '6f1c0b1e-3c1a-4d2e-9b7a-2f9d4a1c0e04';
 
 const profile: Snapshot['profile'] = {
   name: 'Sam', timezone: 'Europe/Berlin', weekStart: 'monday', defaultRestDays: 1, showStreaks: true, celebrate: true,
@@ -18,6 +19,7 @@ function snapshot(): Snapshot {
     habits: [a],
     checkins: [{ habitId: ID_A, date: '2026-11-09' }],
     notes: [{ id: NOTE, habitId: ID_A, date: '2026-11-09', text: 'Rainy', createdAt: '2026-11-09T08:00:00Z' }],
+    tasks: [{ id: TASK, title: 'Call the bank', date: '2026-11-09', doneOn: null, createdAt: '2026-11-09T08:00:00Z', updatedAt: '2026-11-09T08:00:00Z' }],
   };
 }
 
@@ -30,8 +32,14 @@ describe('export and import', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.snapshot).toEqual(original);
-      expect(result.summary).toEqual({ habits: 1, checkins: 1, notes: 1 });
+      expect(result.summary).toEqual({ habits: 1, checkins: 1, notes: 1, tasks: 1 });
     }
+  });
+
+  it('still imports exports made before tasks existed', () => {
+    const { tasks: _none, ...older } = buildExport(snapshot(), 'x');
+    const result = parseImport(JSON.stringify(older));
+    expect(result.ok && result.snapshot.tasks).toEqual([]);
   });
 
   it('explains what is wrong with a bad file', () => {
@@ -53,11 +61,13 @@ describe('mergeSnapshots', () => {
       habits: [newer, extra],
       checkins: [{ habitId: ID_A, date: '2026-11-09' }, { habitId: ID_B, date: '2026-11-08' }],
       notes: [],
+      tasks: [{ ...current.tasks[0]!, doneOn: '2026-11-10', updatedAt: '2027-01-01T00:00:00Z' }],
     };
     const merged = mergeSnapshots(current, incoming);
     expect(merged.profile.name).toBe('Sam');
     expect(merged.habits.map((h) => h.name)).toEqual(['Renamed', extra.name]);
     expect(merged.checkins).toHaveLength(2);
     expect(merged.notes).toHaveLength(1);
+    expect(merged.tasks[0]?.doneOn).toBe('2026-11-10');
   });
 });

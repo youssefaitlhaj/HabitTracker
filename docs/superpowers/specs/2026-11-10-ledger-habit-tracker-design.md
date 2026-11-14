@@ -186,6 +186,10 @@ All "today" and date logic uses the **user's time zone** from their profile.
 
 Added 2026-11-13. Each habit's reminder time sends a web push notification when the habit is scheduled that day and not done yet (weekly habits: until the weekly target is met), at most once per habit per day, and never more than 3 hours late. Reminders are turned on per device in Settings › Notifications (on iPhone, only after adding Ledger to the Home Screen). A GitHub Actions job checks every 5 minutes, using the same stats rules as the app (`src/domain/reminders.ts`). The weekly summary email is not built.
 
+### 8.6b Daily tasks (added 2026-11-14)
+
+One-off to-dos in a "Daily tasks" section on Today, under the habits. A task belongs to the day it was added for; until it's checked off it keeps showing on later days, labelled "From <day>". Checking off, reopening and deleting all have Undo. Tasks never affect habit streaks or progress %. They are included in export/import (older exports without tasks still import).
+
 ### 8.7 Export and import (JSON)
 
 Export downloads `ledger-export-YYYY-MM-DD.json`:

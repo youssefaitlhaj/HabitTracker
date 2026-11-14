@@ -3,7 +3,8 @@ import { newId, nowIso } from '@/data/defaults';
 import type { ProfilePatch } from '@/data/ports';
 import { formatShort } from '@/domain/date';
 import { archiveHabit, restoreHabit, sortHabits } from '@/domain/habits';
-import type { Checkin, Habit, LocalDate, Note } from '@/domain/types';
+import { createTask, setTaskDone } from '@/domain/tasks';
+import type { Checkin, Habit, LocalDate, Note, Task } from '@/domain/types';
 import { useToast } from '@/ui/Toast';
 import { useOptimistic } from './mutations';
 
@@ -96,6 +97,35 @@ export function useNoteActions() {
     add: (habitId: string, date: LocalDate, text: string) =>
       add.mutate({ id: newId(), habitId, date, text: text.trim(), createdAt: nowIso() }),
     remove: remove.mutate,
+  };
+}
+
+export function useTaskActions() {
+  const toast = useToast();
+  const save = useOptimistic({
+    part: 'tasks',
+    apply: (list, task: Task) => [...list.filter((t) => t.id !== task.id), task],
+    run: (r, task) => r.tasks.save(task),
+    errorMessage: 'Could not save the task.',
+  });
+  const remove = useOptimistic({
+    part: 'tasks',
+    apply: (list, task: Task) => list.filter((t) => t.id !== task.id),
+    run: (r, task) => r.tasks.remove(task),
+    errorMessage: 'Could not delete the task.',
+  });
+  const undo = (task: Task) => ({ label: 'Undo', run: () => save.mutate(task) });
+
+  return {
+    add: (title: string, today: LocalDate) => save.mutate(createTask(title, today, newId(), nowIso())),
+    setDone: (task: Task, done: boolean, today: LocalDate) => {
+      save.mutate(setTaskDone(task, done, today, nowIso()));
+      toast.show(done ? `“${task.title}” done.` : `“${task.title}” is open again.`, { kind: done ? 'success' : 'info', action: undo(task) });
+    },
+    remove: (task: Task) => {
+      remove.mutate(task);
+      toast.show(`“${task.title}” deleted.`, { action: undo(task) });
+    },
   };
 }
 
