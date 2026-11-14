@@ -27,8 +27,8 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: '/', label: 'Today', short: 'Today', icon: 'today', end: true },
   { to: '/tasks', label: 'Tasks', short: 'Tasks', icon: 'tasks' },
-  { to: '/progress', label: 'Progress', short: 'Progress', icon: 'chart' },
   { to: '/habits', label: 'All habits', short: 'Habits', icon: 'list' },
+  { to: '/progress', label: 'Progress', short: 'Progress', icon: 'chart' },
   { to: '/settings', label: 'Settings', short: 'Settings', icon: 'settings' },
 ];
 
