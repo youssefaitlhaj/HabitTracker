@@ -10,3 +10,8 @@ dist/
 /image_2.png
 /image._3png.png
 *.tsbuildinfo
+
+# Firebase / Google service-account keys: never commit these
+*firebase-adminsdk*.json
+*service-account*.json
+*serviceAccount*.json
