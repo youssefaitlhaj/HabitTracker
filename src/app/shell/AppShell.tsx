@@ -13,6 +13,7 @@ import { Avatar } from '@/ui/Display';
 import { cx } from '@/ui/cx';
 import { Icon, type IconName } from '@/ui/Icon';
 import { LogoMark, Wordmark } from '@/ui/Logo';
+import { useConnectionToasts } from './useConnectionToasts';
 
 /** Responsive navigation (design §8.9): sidebar ≥1200 px, icon rail 768–1199 px, bottom bar on phones. */
 
@@ -138,6 +139,7 @@ export function AppShell() {
   const [choosing, setChoosing] = useState(false);
   const refresh = useRefreshLedger();
   const toast = useToast();
+  useConnectionToasts();
   const pullToRefresh = async () => {
     if (!(await refresh())) {
       toast.show('Couldn’t refresh. Check your connection and try again.', { kind: 'error', action: { label: 'Retry', run: () => void refresh() } });
@@ -148,7 +150,6 @@ export function AppShell() {
     document.body.classList.add('has-bottom-nav');
     return () => document.body.classList.remove('has-bottom-nav');
   }, []);
-
 
   return (
     <PullToRefresh onRefresh={pullToRefresh}>

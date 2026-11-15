@@ -11,12 +11,13 @@ import {
   validateTaskDraft,
 } from './tasks';
 import type { Task } from './types';
+import { makeTask } from '@/test/factories';
 
 const TODAY = '2026-11-14'; // Saturday; Monday week = 9 … 15 Nov
 const NOW = '2026-11-14T09:00:00Z';
 
 function task(overrides: Partial<Task> & { title: string }): Task {
-  return { id: overrides.title, notes: '', date: TODAY, time: null, severity: null, doneOn: null, createdAt: NOW, updatedAt: NOW, ...overrides };
+  return makeTask({ id: overrides.title, date: TODAY, createdAt: NOW, updatedAt: NOW, ...overrides });
 }
 
 describe('task drafts', () => {

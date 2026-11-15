@@ -32,7 +32,9 @@ Firebase sends the confirmation and password-reset emails itself, so no separate
 
 ### Reminder notifications (Firebase + GitHub Actions, free)
 
-A GitHub Actions job (`.github/workflows/reminders.yml`) runs `scripts/send-reminders.ts` every 5 minutes. It sends a push notification for each habit whose reminder time has come and that isn't done yet. GitHub can start scheduled runs a few minutes late.
+A GitHub Actions job (`.github/workflows/reminders.yml`) runs `scripts/send-reminders.ts`. It sends a push notification for each habit whose reminder time has come and that isn't done yet, and for each open task whose date is today and whose time has come.
+
+GitHub's own schedule (`*/5 * * * *`) is only a fallback: on free accounts GitHub skips most of those runs, often for hours. The reliable trigger is a free external cron (cron-job.org) that starts the workflow every 5 minutes through GitHub's API (step 7).
 
 1. Create VAPID keys once with `npx web-push generate-vapid-keys`.
 2. **Vercel › Environment Variables**: add `VITE_VAPID_PUBLIC_KEY` (the public key, visibility "Config"), then redeploy.
@@ -40,8 +42,16 @@ A GitHub Actions job (`.github/workflows/reminders.yml`) runs `scripts/send-remi
 4. **GitHub › Settings › Secrets and variables › Actions**: add `FIREBASE_SERVICE_ACCOUNT` (the whole JSON), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (`mailto:` plus your email).
 5. **GitHub › Actions › Habit reminders › Run workflow** once to check it runs.
 6. In Ledger, go to **Settings › Notifications** and turn reminders on for each device. On iPhone, add Ledger to the Home Screen first.
+7. Reliable 5-minute trigger:
+   - **GitHub › Settings › Developer settings › Fine-grained tokens › Generate new token**: repository access *Only select repositories* → this repo; permission **Actions: Read and write**. Copy the token.
+   - **cron-job.org** (free account) › Create cronjob: URL `https://api.github.com/repos/<owner>/<repo>/actions/workflows/reminders.yml/dispatches`, schedule every 5 minutes. Under *Advanced*: method **POST**; headers `Accept: application/vnd.github+json`, `Authorization: Bearer <token>`, `X-GitHub-Api-Version: 2022-11-28`; request body `{"ref":"main"}`.
+   - A successful call returns **204**, and a "workflow_dispatch" run appears under **GitHub › Actions › Habit reminders** within a minute.
 
-GitHub pauses scheduled workflows after 60 days without commits; re-enable them from the Actions tab if that happens.
+GitHub pauses scheduled workflows after 60 days without commits; re-enable them from the Actions tab if that happens (runs started from cron-job.org are not affected). Each run's log lists, per account, the number of devices, the local time and how many reminders were due, which helps when one doesn't arrive.
+
+### Offline use
+
+Installed on a phone (Add to Home Screen), Ledger opens and works without a connection: the service worker (`public/sw.js`) keeps the app's files, whose list the build writes into `dist/sw.js`, and Firestore keeps a copy of the data on the device. Changes made offline sync when the connection is back. Importing, deleting the account and turning reminders on or off need a connection.
 
 ### Supabase (alternative)
 

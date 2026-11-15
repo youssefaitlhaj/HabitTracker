@@ -1,4 +1,4 @@
-import type { Checkin, Habit, LocalDate, Schedule } from '@/domain/types';
+import type { Checkin, Habit, LocalDate, Schedule, Task } from '@/domain/types';
 import { eachDay } from '@/domain/date';
 
 let seq = 0;
@@ -32,4 +32,20 @@ export function checkinsFor(habit: Habit, dates: LocalDate[]): Checkin[] {
 
 export function checkinsBetween(habit: Habit, from: LocalDate, to: LocalDate, except: LocalDate[] = []): Checkin[] {
   return checkinsFor(habit, eachDay(from, to).filter((d) => !except.includes(d)));
+}
+
+export function makeTask(overrides: Partial<Task> = {}): Task {
+  seq += 1;
+  return {
+    id: `t${seq}`,
+    title: `Task ${seq}`,
+    notes: '',
+    date: null,
+    time: null,
+    severity: null,
+    doneOn: null,
+    createdAt: '2026-11-01T00:00:00Z',
+    updatedAt: '2026-11-01T00:00:00Z',
+    ...overrides,
+  };
 }

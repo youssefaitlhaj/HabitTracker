@@ -26,7 +26,12 @@ export function App({ backend }: { backend: Backend }) {
         queryCache: new QueryCache({
           onError: (error, query) => console.error(`[Ledger] Couldn’t load ${String(query.queryKey[2] ?? query.queryKey[0])}:`, error),
         }),
-        defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+        // 'always': the data layer handles being offline itself (Firestore's on-device copy),
+        // so React Query mustn't pause loading and saving while there's no connection.
+        defaultOptions: {
+          queries: { staleTime: 30_000, retry: 1, networkMode: 'always' },
+          mutations: { networkMode: 'always' },
+        },
       }),
   );
   return (
