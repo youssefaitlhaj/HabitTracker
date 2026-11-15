@@ -1,11 +1,18 @@
+import type { FirebaseApp } from 'firebase/app';
 import {
+  clearIndexedDbPersistence,
   getDoc,
   getDocFromCache,
   getDocs,
   getDocsFromCache,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  terminate,
   type DocumentData,
   type DocumentReference,
   type DocumentSnapshot,
+  type Firestore,
   type Query,
   type QuerySnapshot,
 } from 'firebase/firestore';
@@ -16,6 +23,40 @@ import { friendly } from './errors';
  * These helpers make the app use that copy straight away when there's no connection, instead of
  * waiting for the server.
  */
+
+/**
+ * The Firestore instance with its on-device copy. Signing out or deleting the account wipes that
+ * copy, so the next person using the device can't read it, and starts a fresh instance.
+ */
+export class FirestoreStore {
+  private current: Firestore;
+
+  constructor(private readonly app: FirebaseApp) {
+    this.current = this.open();
+  }
+
+  get db(): Firestore {
+    return this.current;
+  }
+
+  async wipe(): Promise<void> {
+    await terminate(this.current);
+    try {
+      await clearIndexedDbPersistence(this.current);
+    } catch (error) {
+      // Fails while another Ledger tab still has the data open; the copy then stays until a later sign-out.
+      console.error('[Ledger] Couldn’t remove the offline copy from this device:', error);
+    }
+    this.current = this.open();
+  }
+
+  private open(): Firestore {
+    return initializeFirestore(this.app, {
+      ignoreUndefinedProperties: true,
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
+  }
+}
 
 export const isOffline = (): boolean => typeof navigator !== 'undefined' && navigator.onLine === false;
 

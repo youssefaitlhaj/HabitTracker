@@ -74,7 +74,8 @@ async function main(): Promise<void> {
   const users = await db.collection('users').get();
   for (const [index, user] of users.docs.entries()) {
     const devicesSnap = await user.ref.collection('devices').get();
-    const label = `Account ${index + 1}`; // no ids or emails in the public Actions log
+    // The repo is public, so is this log: counts only, no ids, emails, time zones or times.
+    const label = `Account ${index + 1}`;
     if (devicesSnap.empty) {
       console.log(`${label}: no devices with reminders on.`);
       continue;
@@ -99,8 +100,7 @@ async function main(): Promise<void> {
     });
     const dueTasks = dueTaskReminders({ tasks, today, now: time, sent: profile.taskRemindersSent ?? {} });
     console.log(
-      `${label}: ${devicesSnap.size} device(s), local time ${time} (${timezone}), ` +
-        `${habits.length} habit and ${dueTasks.length} task reminder(s) due.`,
+      `${label}: ${devicesSnap.size} device(s), ${habits.length} habit and ${dueTasks.length} task reminder(s) due.`,
     );
     if (!habits.length && !dueTasks.length) continue;
 

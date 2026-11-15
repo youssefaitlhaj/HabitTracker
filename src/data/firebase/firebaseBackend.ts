@@ -27,9 +27,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
   setDoc,
   updateDoc,
   runTransaction,
@@ -56,7 +53,7 @@ import type {
   TaskRepository,
 } from '../ports';
 import { friendly } from './errors';
-import { isOffline, readDoc, readDocs, requireConnection, save } from './offline';
+import { FirestoreStore, isOffline, readDoc, readDocs, requireConnection, save } from './offline';
 import { checkinsOf, habitFields, notesOf, taskMonth, type DeviceDoc, type HabitDoc, type TaskMonthDoc } from './habitDoc';
 import { sha256Hex } from '@/lib/hash';
 import { detectTimeZone } from '@/domain/date';
@@ -102,7 +99,7 @@ function newProfile(name: string, timezone: string): ProfileDoc {
 class FirebaseAuthService implements AuthService {
   constructor(
     private readonly auth: Auth,
-    private readonly db: Firestore,
+    private readonly store: FirestoreStore,
   ) {}
 
   async getSession(): Promise<Session | null> {
@@ -116,7 +113,7 @@ class FirebaseAuthService implements AuthService {
 
   async signUp({ name, email, password, timezone }: SignUpInput): Promise<{ needsConfirmation: boolean }> {
     const { user } = await friendly(createUserWithEmailAndPassword(this.auth, email, password));
-    await friendly(setDoc(doc(this.db, 'users', user.uid), newProfile(name, timezone)));
+    await friendly(setDoc(doc(this.store.db, 'users', user.uid), newProfile(name, timezone)));
     await friendly(sendEmailVerification(user, continueUrl()));
     await signOut(this.auth);
     return { needsConfirmation: true };
@@ -134,6 +131,7 @@ class FirebaseAuthService implements AuthService {
 
   async signOut(): Promise<void> {
     await friendly(signOut(this.auth));
+    await this.store.wipe();
   }
 
   async requestPasswordReset(email: string): Promise<void> {
@@ -189,10 +187,14 @@ class FirebaseEmailActions implements EmailActionService {
 /** Shared paths and reads for one signed-in user. */
 class UserData {
   constructor(
-    readonly db: Firestore,
+    readonly store: FirestoreStore,
     readonly auth: Auth,
     readonly uid: string,
   ) {}
+
+  get db(): Firestore {
+    return this.store.db;
+  }
 
   get profileRef() {
     return doc(this.db, 'users', this.uid);
@@ -262,6 +264,7 @@ class FirebaseProfiles extends FirebaseRepository implements ProfileRepository {
     batch.delete(this.data.profileRef);
     await friendly(batch.commit());
     await friendly(deleteUser(user));
+    await this.data.store.wipe();
   }
 
   async cancelDeletion(): Promise<boolean> {
@@ -410,18 +413,15 @@ class FirebaseSnapshots extends FirebaseRepository implements SnapshotRepository
 export function createFirebaseBackend(settings: FirebaseSettings): Backend {
   const app = initializeApp(settings);
   const auth = getAuth(app);
-  // The on-device copy lets the installed app open and record check-ins without a connection.
-  const db = initializeFirestore(app, {
-    ignoreUndefinedProperties: true,
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-  });
+  // Its on-device copy lets the installed app open and record check-ins without a connection.
+  const store = new FirestoreStore(app);
   return {
     kind: 'firebase',
     capabilities: { globalSignOut: false, deletionGraceDays: 0 },
-    auth: new FirebaseAuthService(auth, db),
+    auth: new FirebaseAuthService(auth, store),
     emailActions: new FirebaseEmailActions(auth),
     repositoriesFor(session: Session): Repositories {
-      const data = new UserData(db, auth, session.userId);
+      const data = new UserData(store, auth, session.userId);
       return {
         profiles: new FirebaseProfiles(data),
         habits: new FirebaseHabits(data),

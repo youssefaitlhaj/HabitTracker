@@ -47,11 +47,11 @@ GitHub's own schedule (`*/5 * * * *`) is only a fallback: on free accounts GitHu
    - **cron-job.org** (free account) › Create cronjob: URL `https://api.github.com/repos/<owner>/<repo>/actions/workflows/reminders.yml/dispatches`, schedule every 5 minutes. Under *Advanced*: method **POST**; headers `Accept: application/vnd.github+json`, `Authorization: Bearer <token>`, `X-GitHub-Api-Version: 2022-11-28`; request body `{"ref":"main"}`.
    - A successful call returns **204**, and a "workflow_dispatch" run appears under **GitHub › Actions › Habit reminders** within a minute.
 
-GitHub pauses scheduled workflows after 60 days without commits; re-enable them from the Actions tab if that happens (runs started from cron-job.org are not affected). Each run's log lists, per account, the number of devices, the local time and how many reminders were due, which helps when one doesn't arrive.
+GitHub pauses scheduled workflows after 60 days without commits; re-enable them from the Actions tab if that happens (runs started from cron-job.org are not affected). Each run's log lists, per account, the number of devices and how many reminders were due (nothing personal: the log is public), which helps when one doesn't arrive.
 
 ### Offline use
 
-Installed on a phone (Add to Home Screen), Ledger opens and works without a connection: the service worker (`public/sw.js`) keeps the app's files, whose list the build writes into `dist/sw.js`, and Firestore keeps a copy of the data on the device. Changes made offline sync when the connection is back. Importing, deleting the account and turning reminders on or off need a connection.
+Installed on a phone (Add to Home Screen), Ledger opens and works without a connection: the service worker (`public/sw.js`) keeps the app's files, whose list the build writes into `dist/sw.js`, and Firestore keeps a copy of the data on the device. Changes made offline sync when the connection is back. Logging out removes the offline copy from the device (changes not yet synced are lost, so log out online). Importing, deleting the account and turning reminders on or off need a connection.
 
 ### Supabase (alternative)
 
