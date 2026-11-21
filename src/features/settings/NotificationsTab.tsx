@@ -1,4 +1,5 @@
 import { useDeviceReminders } from '@/state/reminders';
+import { useIsDemo } from '@/state/session';
 import { Banner } from '@/ui/Banner';
 import { Button } from '@/ui/Button';
 import { Switch } from '@/ui/Choice';
@@ -27,15 +28,21 @@ const BLOCKERS = {
 
 export function NotificationsTab() {
   const { status, busy, enable, disable, test } = useDeviceReminders();
-  const blocker = status && status in BLOCKERS ? BLOCKERS[status as keyof typeof BLOCKERS] : null;
+  const demo = useIsDemo();
+  const blocker = !demo && status && status in BLOCKERS ? BLOCKERS[status as keyof typeof BLOCKERS] : null;
 
   return (
     <SettingsCard
+      realAccountOnly
       title="Notifications"
       titleId="notifications-h"
       description="Get a reminder at each habit’s reminder time if it isn’t done yet. Set the time when you create or edit a habit. Reminders can arrive a few minutes late."
     >
-      {status === null ? (
+      {demo ? (
+        <SettingsRow label="Reminders on this device" hint="Each phone or computer is turned on separately.">
+          <Switch label="Reminders on this device" checked={false} onChange={() => undefined} />
+        </SettingsRow>
+      ) : status === null ? (
         <Skeleton className="h-12" />
       ) : blocker ? (
         <Banner kind={blocker.kind} title={blocker.title}>

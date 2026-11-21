@@ -1,7 +1,9 @@
 import { type ReactNode } from 'react';
 import { NavLink, Navigate, useParams } from 'react-router-dom';
 import { LedgerView } from '@/app/shell/LedgerView';
+import { DemoLock, NotInDemoTag } from '@/features/demo/NotInDemo';
 import type { Ledger } from '@/state/ledger';
+import { useIsDemo } from '@/state/session';
 import { cx } from '@/ui/cx';
 import { PageHeader } from '@/ui/Display';
 import { Icon, type IconName } from '@/ui/Icon';
@@ -56,20 +58,34 @@ export function SettingsPage() {
   );
 }
 
+interface SettingsCardProps {
+  title: string;
+  description?: ReactNode;
+  children: ReactNode;
+  tone?: 'plain' | 'danger';
+  titleId?: string;
+  /** Needs a real account: in the demo the card is labelled "Not in the demo" and its controls are disabled. */
+  realAccountOnly?: boolean;
+}
+
 /** Card wrapper + label/hint/control row shared by all settings tabs. */
-export function SettingsCard({ title, description, children, tone = 'plain', titleId }: { title: string; description?: ReactNode; children: ReactNode; tone?: 'plain' | 'danger'; titleId?: string }) {
+export function SettingsCard({ title, description, children, tone = 'plain', titleId, realAccountOnly = false }: SettingsCardProps) {
+  const locked = useIsDemo() && realAccountOnly;
   return (
     <section
       aria-labelledby={titleId}
-      className={cx('flex flex-col gap-4 rounded-card p-5 tablet:p-6', tone === 'danger' ? 'border-[1.5px] border-error-line bg-error-soft/40' : 'card')}
+      className={cx('flex flex-col gap-4 rounded-card p-5 tablet:p-6', tone === 'danger' && !locked ? 'border-[1.5px] border-error-line bg-error-soft/40' : 'card')}
     >
       <div className="flex flex-col gap-1">
-        <h2 id={titleId} className={cx('m-0 font-display text-[22px] font-semibold', tone === 'danger' && 'text-error-ink')}>
-          {title}
-        </h2>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 id={titleId} className={cx('m-0 font-display text-[22px] font-semibold', tone === 'danger' && !locked && 'text-error-ink')}>
+            {title}
+          </h2>
+          {locked && <NotInDemoTag />}
+        </div>
         {description && <p className="m-0 text-sm leading-relaxed text-muted">{description}</p>}
       </div>
-      {children}
+      <DemoLock locked={locked}>{children}</DemoLock>
     </section>
   );
 }

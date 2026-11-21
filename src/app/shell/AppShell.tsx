@@ -13,6 +13,7 @@ import { Avatar } from '@/ui/Display';
 import { cx } from '@/ui/cx';
 import { Icon, type IconName } from '@/ui/Icon';
 import { LogoMark, Wordmark } from '@/ui/Logo';
+import { restartDemo } from '@/data/demo/demoMode';
 import { useConnectionToasts } from './useConnectionToasts';
 
 /** Responsive navigation (design §8.9): sidebar ≥1200 px, icon rail 768–1199 px, bottom bar on phones. */
@@ -91,9 +92,27 @@ function ProfileLink() {
   );
 }
 
+const NOTICE_HIDDEN_KEY = 'ledger.demoNotice';
+
+/** Strip at the top of the in-browser versions: the sample-data demo and the keyless local mode. */
 function DemoNotice() {
   const backend = useBackend();
-  const [hidden, setHidden] = useState(() => sessionStorage.getItem('ledger.demoNotice') === 'hidden');
+  const [hidden, setHidden] = useState(() => sessionStorage.getItem(NOTICE_HIDDEN_KEY) === 'hidden');
+  if (backend.kind === 'demo') {
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 bg-cask px-4 py-2 text-center text-[13px] text-cask-soft">
+        <span>You’re exploring Ledger with sample data. Your changes stay in this tab.</span>
+        <span className="flex gap-1">
+          <button type="button" onClick={restartDemo} className="min-h-8 rounded-lg px-2.5 font-semibold text-amber hover:bg-white/10">
+            Start over
+          </button>
+          <button type="button" onClick={() => void backend.auth.signOut()} className="min-h-8 rounded-lg px-2.5 font-semibold text-amber hover:bg-white/10">
+            Exit demo
+          </button>
+        </span>
+      </div>
+    );
+  }
   if (backend.kind !== 'local' || hidden) return null;
   return (
     <div className="flex items-center justify-center gap-3 bg-cask px-4 py-2 text-center text-[13px] text-cask-soft">
@@ -103,7 +122,7 @@ function DemoNotice() {
         aria-label="Hide demo notice"
         className="flex h-8 w-8 items-center justify-center rounded-lg text-amber hover:bg-white/10"
         onClick={() => {
-          sessionStorage.setItem('ledger.demoNotice', 'hidden');
+          sessionStorage.setItem(NOTICE_HIDDEN_KEY, 'hidden');
           setHidden(true);
         }}
       >

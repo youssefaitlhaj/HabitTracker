@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
+import { DEMO_PATH } from '@/data/demo/demoMode';
 import { cx } from '@/ui/cx';
 import { Wordmark } from '@/ui/Logo';
 
@@ -64,6 +65,16 @@ export function AuthLayout({ title, subtitle, children, tabs = false }: { title:
             <p className="m-0 text-[15px] text-muted">{subtitle}</p>
           </div>
           {children}
+          {tabs && (
+            <p className="m-0 border-t border-line-soft pt-5 text-center text-sm text-muted">
+              Just looking?{' '}
+              {/* A full page load: the demo runs on its own backend, chosen at start-up. */}
+              <a href={DEMO_PATH} className="font-semibold">
+                Try the demo
+              </a>{' '}
+              with sample data, no account needed.
+            </p>
+          )}
         </div>
       </main>
     </div>

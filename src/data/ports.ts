@@ -124,7 +124,7 @@ export interface BackendCapabilities {
 }
 
 export interface Backend {
-  kind: 'firebase' | 'supabase' | 'local';
+  kind: 'firebase' | 'supabase' | 'local' | 'demo';
   capabilities: BackendCapabilities;
   auth: AuthService;
   /** Present when email links come back to the app's /auth/action page. */

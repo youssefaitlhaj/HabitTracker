@@ -53,6 +53,10 @@ GitHub pauses scheduled workflows after 60 days without commits; re-enable them 
 
 Installed on a phone (Add to Home Screen), Ledger opens and works without a connection: the service worker (`public/sw.js`) keeps the app's files, whose list the build writes into `dist/sw.js`, and Firestore keeps a copy of the data on the device. Changes made offline sync when the connection is back. Logging out removes the offline copy from the device (changes not yet synced are lost, so log out online). Importing, deleting the account and turning reminders on or off need a connection.
 
+### Demo for visitors (`/demo`)
+
+Send people `<your site>/demo` (or they click **Try the demo** on the log-in page) to try Ledger without an account. It opens on Today, signed in as a sample user with about four months of history: habits with streaks, a quieter fortnight, an archived habit, notes, and tasks that are done, due today, overdue, upcoming and undated (`src/data/demo/demoData.ts`, dated relative to today). Nothing reaches Firebase: the data lives in that browser tab, survives reloads, and is gone when the tab closes, on **Start over** or **Exit demo**. Features that need a real account are labelled "Not in the demo" and disabled: password, email change, account deletion and reminders.
+
 ### Supabase (alternative)
 
 The Supabase version is still included: run `supabase/migrations/` in a Supabase project, add its URL and its `/login` and `/update-password` redirect URLs under Authentication › URL Configuration, and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. It is used only when the Firebase keys are empty.

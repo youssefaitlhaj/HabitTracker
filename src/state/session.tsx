@@ -59,6 +59,11 @@ export function useBackend(): Backend {
   return backend;
 }
 
+/** True in the sample-data demo (/demo), where account features are labelled "Not in the demo". */
+export function useIsDemo(): boolean {
+  return useBackend().kind === 'demo';
+}
+
 export function useSession(): SessionValue {
   return useContext(SessionContext);
 }
