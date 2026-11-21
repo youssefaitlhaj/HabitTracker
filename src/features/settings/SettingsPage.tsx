@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { NavLink, Navigate, useParams } from 'react-router-dom';
 import { LedgerView } from '@/app/shell/LedgerView';
 import { DemoLock, NotInDemoTag } from '@/features/demo/NotInDemo';
+import { useIsAdmin } from '@/state/feedback';
 import type { Ledger } from '@/state/ledger';
 import { useIsDemo } from '@/state/session';
 import { cx } from '@/ui/cx';
@@ -9,31 +10,46 @@ import { PageHeader } from '@/ui/Display';
 import { Icon, type IconName } from '@/ui/Icon';
 import { AccountTab } from './AccountTab';
 import { DataTab } from './DataTab';
+import { AdminGate, FeedbackTab } from './FeedbackTab';
 import { NotificationsTab } from './NotificationsTab';
 import { PreferencesTab } from './PreferencesTab';
 import { ProfileTab } from './ProfileTab';
 
 /** Settings (design §8.5). Language is hidden for now. */
 
-const TABS: { id: string; label: string; icon: IconName; render: (ledger: Ledger) => ReactNode }[] = [
+interface Tab {
+  id: string;
+  label: string;
+  icon: IconName;
+  render: (ledger: Ledger) => ReactNode;
+  /** Only shown to admins (listed in Firebase › admins). */
+  adminOnly?: boolean;
+}
+
+const TABS: Tab[] = [
   { id: 'profile', label: 'Profile', icon: 'user', render: (l) => <ProfileTab ledger={l} /> },
   { id: 'preferences', label: 'Preferences', icon: 'settings', render: (l) => <PreferencesTab ledger={l} /> },
   { id: 'notifications', label: 'Notifications', icon: 'bell', render: () => <NotificationsTab /> },
   { id: 'data', label: 'Data', icon: 'download', render: (l) => <DataTab ledger={l} /> },
   { id: 'account', label: 'Account', icon: 'logout', render: () => <AccountTab /> },
+  { id: 'feedback', label: 'Demo feedback', icon: 'note', render: (l) => <FeedbackTab ledger={l} />, adminOnly: true },
 ];
 
 export function SettingsPage() {
   const { tab = 'profile' } = useParams();
+  const admin = useIsAdmin() === true;
+  const tabs = TABS.filter((t) => admin || !t.adminOnly);
   const current = TABS.find((t) => t.id === tab);
   if (!current) return <Navigate to="/settings" replace />;
+  // Wait for the admin check instead of bouncing an admin who opened the tab from a notification.
+  if (current.adminOnly && !admin) return <AdminGate />;
 
   return (
     <div className="flex flex-col gap-7">
       <PageHeader title="Settings" />
       <div className="flex flex-wrap items-start gap-7">
         <nav aria-label="Settings sections" className="flex flex-[1_1_200px] flex-wrap gap-1 desktop:max-w-[220px] desktop:flex-col">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <NavLink
               key={t.id}
               to={t.id === 'profile' ? '/settings' : `/settings/${t.id}`}

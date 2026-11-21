@@ -57,6 +57,15 @@ Installed on a phone (Add to Home Screen), Ledger opens and works without a conn
 
 Send people `<your site>/demo` (or they click **Try the demo** on the log-in page) to try Ledger without an account. It opens on Today, signed in as a sample user with about four months of history: habits with streaks, a quieter fortnight, an archived habit, notes, and tasks that are done, due today, overdue, upcoming and undated (`src/data/demo/demoData.ts`, dated relative to today). Nothing reaches Firebase: the data lives in that browser tab, survives reloads, and is gone when the tab closes, on **Start over** or **Exit demo**. Features that need a real account are labelled "Not in the demo" and disabled: password, email change, account deletion and reminders.
 
+**Feedback.** On **Exit demo**, visitors are asked what they thought (skipping is one click). Only the text and the server's time are saved, in Firestore `demoFeedback`; there's no name, email or device information. Anyone can add an entry (1–1000 characters), only admins can read it, and nobody can edit or delete it from the app (delete spam in the Firebase console). Without Firebase keys in the build (e.g. a Vercel environment without them), Exit demo just leaves.
+
+To read it and be notified:
+
+1. Publish the latest `firestore.rules` (Firebase › Firestore Database › Rules).
+2. Make yourself an admin: copy your **User UID** from Firebase › Authentication › Users, then in Firestore › **Start collection** `admins` › Document ID = that UID (no fields needed). Repeat for each admin.
+3. Read it in Ledger under **Settings › Demo feedback** (only admins see this tab).
+4. Notifications: turn reminders on for your devices (Settings › Notifications). The reminder job sends each admin device "New demo feedback" once per message, so it arrives as quickly as the job runs (every 5 minutes with the cron-job.org trigger above).
+
 ### Supabase (alternative)
 
 The Supabase version is still included: run `supabase/migrations/` in a Supabase project, add its URL and its `/login` and `/update-password` redirect URLs under Authentication › URL Configuration, and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. It is used only when the Firebase keys are empty.

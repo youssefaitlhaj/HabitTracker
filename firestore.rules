@@ -13,6 +13,31 @@ service cloud.firestore {
       return isOwner(uid) && request.auth.token.email_verified == true;
     }
 
+    // Admins are added by hand: Firestore › admins › document whose id is the admin's user UID.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Lets the app ask "am I an admin?". Nobody can add or change admins from the app.
+    match /admins/{uid} {
+      allow get: if isOwner(uid);
+    }
+
+    // Feedback from demo visitors, who have no account: anyone may add one entry with only
+    // the text (1–1000 characters), the server's time and notified = false. Only admins read it;
+    // nobody can change or delete it from the app (the reminder job sets notified with its own key).
+    match /demoFeedback/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['text', 'createdAt', 'notified'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 1000
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.notified == false;
+      allow read: if isAdmin();
+    }
+
     match /users/{uid} {
       // The profile is created during sign-up, before the email is confirmed.
       allow create: if isOwner(uid)

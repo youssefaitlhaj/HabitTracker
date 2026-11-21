@@ -1,3 +1,4 @@
+import type { DemoFeedback } from '@/domain/feedback';
 import type { Checkin, Habit, Note, Profile, ProfileSettings, Snapshot, Task } from '@/domain/types';
 
 /**
@@ -87,6 +88,18 @@ export interface DeviceRepository {
   unregister(endpoint: string): Promise<void>;
 }
 
+/** Sends what a demo visitor wrote on leaving: only the text; the server adds the time. */
+export interface FeedbackSender {
+  send(text: string): Promise<void>;
+}
+
+/** Demo feedback for admins. Everyone else is "not an admin" and can't read any. */
+export interface FeedbackRepository {
+  isAdmin(): Promise<boolean>;
+  /** Newest first. */
+  list(): Promise<DemoFeedback[]>;
+}
+
 export interface SnapshotRepository {
   load(): Promise<Snapshot>;
   /** Atomically replaces all of the user's habits, check-ins, notes and settings. */
@@ -102,6 +115,8 @@ export interface Repositories {
   snapshots: SnapshotRepository;
   /** Present when the backend can send reminder notifications. */
   devices?: DeviceRepository;
+  /** Present when the backend stores demo feedback (admins read it). */
+  feedback?: FeedbackRepository;
 }
 
 /** Links in Ledger's emails (reset password, confirm email) that open the app's own page. */
@@ -129,5 +144,7 @@ export interface Backend {
   auth: AuthService;
   /** Present when email links come back to the app's /auth/action page. */
   emailActions?: EmailActionService;
+  /** Demo only: where feedback goes when a visitor leaves. Absent when nothing can store it. */
+  feedback?: FeedbackSender;
   repositoriesFor(session: Session): Repositories;
 }

@@ -1,5 +1,5 @@
 import { detectTimeZone, todayIn } from '@/domain/date';
-import type { AuthService, Backend, Session } from '../ports';
+import type { AuthService, Backend, FeedbackSender, Session } from '../ports';
 import { createLocalBackend } from '../local/localBackend';
 import { LocalStore } from '../local/localStore';
 import { DEMO_EMAIL, DEMO_USER_ID, demoAccount } from './demoData';
@@ -47,12 +47,14 @@ export interface DemoOptions {
   fresh: boolean;
   /** Called after the demo data is removed, to leave the demo. */
   onExit: () => void;
+  /** Where visitors' feedback goes when they leave; none = no feedback step. */
+  feedback?: FeedbackSender;
   storage?: Storage;
   timezone?: string;
   now?: Date;
 }
 
-export function createDemoBackend({ fresh, onExit, storage = sessionStorage, timezone = detectTimeZone(), now = new Date() }: DemoOptions): Backend {
+export function createDemoBackend({ fresh, onExit, feedback, storage = sessionStorage, timezone = detectTimeZone(), now = new Date() }: DemoOptions): Backend {
   const store = new LocalStore(storage, STORE_PREFIX);
   if (fresh || !store.userIdByEmail(DEMO_EMAIL)) {
     store.clear();
@@ -62,6 +64,7 @@ export function createDemoBackend({ fresh, onExit, storage = sessionStorage, tim
   return {
     kind: 'demo',
     capabilities: { globalSignOut: false, deletionGraceDays: 0 },
+    feedback,
     auth: new DemoAuth({ userId: DEMO_USER_ID, email: DEMO_EMAIL }, () => {
       store.clear();
       onExit();

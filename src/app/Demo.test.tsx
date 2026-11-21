@@ -5,14 +5,15 @@ import { createBackend } from '@/data/backend';
 import { createDemoBackend } from '@/data/demo/demoBackend';
 import { demoRequested } from '@/data/demo/demoMode';
 import { createLocalBackend } from '@/data/local/localBackend';
+import type { FeedbackSender } from '@/data/ports';
 import { LocalStore } from '@/data/local/localStore';
 import { openSettings, resetBrowser } from '@/test/appFlows';
 import { App } from './App';
 
 /** The sample-data demo (/demo): no account, realistic data, account features labelled. */
 
-function renderDemo(onExit = vi.fn()) {
-  render(<App backend={createDemoBackend({ fresh: true, onExit, timezone: 'UTC' })} />);
+function renderDemo(onExit = vi.fn(), feedback?: FeedbackSender) {
+  render(<App backend={createDemoBackend({ fresh: true, onExit, feedback, timezone: 'UTC' })} />);
   return onExit;
 }
 
@@ -83,5 +84,39 @@ describe('demo', () => {
     resetBrowser('/login');
     render(<App backend={createLocalBackend(new LocalStore(localStorage))} />);
     expect(await screen.findByRole('link', { name: 'Try the demo' })).toHaveAttribute('href', '/demo');
+  });
+
+  it('asks for feedback on exit: text only, with skipping one click away', async () => {
+    const user = userEvent.setup();
+    const sender = { send: vi.fn().mockResolvedValue(undefined) };
+    const onExit = renderDemo(vi.fn(), sender);
+
+    await user.click(await screen.findByRole('button', { name: 'Exit demo' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Before you go' });
+    expect(within(dialog).queryByLabelText(/email/i)).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Send and exit' }));
+    expect(within(dialog).getByText(/Write a few words first/)).toBeInTheDocument();
+    expect(sender.send).not.toHaveBeenCalled();
+
+    await user.type(within(dialog).getByLabelText('Your feedback'), 'The progress chart is great');
+    await user.click(within(dialog).getByRole('button', { name: 'Send and exit' }));
+    expect(sender.send).toHaveBeenCalledWith('The progress chart is great');
+    expect(onExit).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves without sending when the visitor skips, and keeps them in when sending fails', async () => {
+    const user = userEvent.setup();
+    const sender = { send: vi.fn().mockRejectedValue(new Error('You’re offline.')) };
+    const onExit = renderDemo(vi.fn(), sender);
+
+    await user.click(await screen.findByRole('button', { name: 'Exit demo' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Your feedback'), 'Hello');
+    await user.click(within(dialog).getByRole('button', { name: 'Send and exit' }));
+    expect(await screen.findByText('You’re offline.')).toBeInTheDocument();
+    expect(onExit).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Exit without feedback' }));
+    expect(onExit).toHaveBeenCalledTimes(1);
   });
 });

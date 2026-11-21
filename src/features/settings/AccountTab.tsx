@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { newPasswordErrors, requiredError } from '@/domain/validation';
 import { NewPasswordFields } from '@/features/auth/NewPasswordFields';
+import { useExitDemo } from '@/features/demo/ExitDemo';
 import { PasswordInput } from '@/features/auth/PasswordInput';
 import { errorText } from '@/state/mutations';
 import { useBackend, useIsDemo, useRepos } from '@/state/session';
@@ -17,6 +18,7 @@ export function AccountTab() {
   const grace = capabilities.deletionGraceDays;
   const { repos, session } = useRepos();
   const demo = useIsDemo();
+  const exitDemo = useExitDemo();
   const toast = useToast();
   const [confirm, setConfirm] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -83,9 +85,10 @@ export function AccountTab() {
 
       {demo ? (
         <SettingsCard title="Demo" titleId="sessions-h" description="Leave the demo and go to the log-in page. The sample data and your changes to it are discarded.">
-          <Button variant="dark" icon="logout" className="self-start" onClick={() => void auth.signOut()}>
+          <Button variant="dark" icon="logout" className="self-start" onClick={exitDemo.exit}>
             Exit demo
           </Button>
+          {exitDemo.dialog}
         </SettingsCard>
       ) : (
         <SettingsCard title="Sessions" titleId="sessions-h" description={capabilities.globalSignOut ? 'Sign out here, or everywhere you’re logged in.' : 'Sign out of Ledger on this device.'}>

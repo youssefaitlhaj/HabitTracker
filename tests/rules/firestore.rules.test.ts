@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 /**
@@ -27,6 +27,8 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users/sam/habits/h1'), { id: 'h1', name: 'Walk' });
     await setDoc(doc(db, 'users/sam/taskMonths/2026-11'), { items: [] });
     await setDoc(doc(db, 'users/sam/devices/d1'), { subscription: {} });
+    await setDoc(doc(db, 'admins/sam'), {});
+    await setDoc(doc(db, 'demoFeedback/f1'), { text: 'Nice', createdAt: new Date(), notified: false });
   });
 });
 
@@ -58,5 +60,41 @@ describe('firestore.rules', () => {
 
   it('allows creating your own profile before the email is confirmed (sign-up)', async () => {
     await assertSucceeds(setDoc(doc(env.authenticatedContext('new', { email_verified: false }).firestore(), 'users/new'), { name: 'New' }));
+  });
+
+  describe('demo feedback', () => {
+    const visitor = () => env.unauthenticatedContext().firestore();
+    const feedback = (extra: object = {}) => ({ text: 'Loved the charts', createdAt: serverTimestamp(), notified: false, ...extra });
+    // What the admin tab does: newest first, up to 500.
+    const newest = (db: ReturnType<typeof visitor>) => getDocs(query(collection(db, 'demoFeedback'), orderBy('createdAt', 'desc'), limit(500)));
+
+    it('lets a visitor without an account send text with the server time', async () => {
+      await assertSucceeds(addDoc(collection(visitor(), 'demoFeedback'), feedback()));
+    });
+
+    it('rejects anything else: extra fields, empty or long text, a made-up time, notified = true', async () => {
+      const db = visitor();
+      await assertFails(addDoc(collection(db, 'demoFeedback'), feedback({ email: 'a@b.c' })));
+      await assertFails(addDoc(collection(db, 'demoFeedback'), feedback({ text: '' })));
+      await assertFails(addDoc(collection(db, 'demoFeedback'), feedback({ text: 'x'.repeat(1001) })));
+      await assertFails(addDoc(collection(db, 'demoFeedback'), feedback({ createdAt: new Date('2020-01-01') })));
+      await assertFails(addDoc(collection(db, 'demoFeedback'), feedback({ notified: true })));
+    });
+
+    it('lets only admins read it, and nobody change or delete it', async () => {
+      await assertSucceeds(newest(confirmed()));
+      await assertFails(newest(stranger()));
+      await assertFails(newest(unconfirmed()));
+      await assertFails(newest(visitor()));
+      await assertFails(updateDoc(doc(confirmed(), 'demoFeedback/f1'), { notified: true }));
+      await assertFails(deleteDoc(doc(confirmed(), 'demoFeedback/f1')));
+    });
+
+    it('lets people check whether they are an admin, but not make themselves one', async () => {
+      await assertSucceeds(getDoc(doc(confirmed(), 'admins/sam')));
+      await assertSucceeds(getDoc(doc(stranger(), 'admins/alex')));
+      await assertFails(getDoc(doc(stranger(), 'admins/sam')));
+      await assertFails(setDoc(doc(stranger(), 'admins/alex'), {}));
+    });
   });
 });

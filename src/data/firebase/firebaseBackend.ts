@@ -27,7 +27,11 @@ import {
   collection,
   deleteDoc,
   doc,
+  limit,
+  orderBy,
+  query,
   setDoc,
+  type Timestamp,
   updateDoc,
   runTransaction,
   writeBatch,
@@ -39,6 +43,7 @@ import type {
   Backend,
   DeviceRepository,
   EmailActionService,
+  FeedbackRepository,
   PushDevice,
   CheckinRepository,
   HabitRepository,
@@ -53,6 +58,8 @@ import type {
   TaskRepository,
 } from '../ports';
 import { friendly } from './errors';
+import { FEEDBACK_COLLECTION } from './feedbackSender';
+import type { DemoFeedback } from '@/domain/feedback';
 import { FirestoreStore, isOffline, readDoc, readDocs, requireConnection, save } from './offline';
 import { checkinsOf, habitFields, notesOf, taskMonth, type DeviceDoc, type HabitDoc, type TaskMonthDoc } from './habitDoc';
 import { sha256Hex } from '@/lib/hash';
@@ -372,6 +379,27 @@ class FirebaseDevices extends FirebaseRepository implements DeviceRepository {
   }
 }
 
+/** Admins are listed by hand in the console (admins/{uid}); the rules let only them read feedback. */
+class FirebaseFeedback extends FirebaseRepository implements FeedbackRepository {
+  async isAdmin(): Promise<boolean> {
+    try {
+      return (await readDoc(doc(this.data.db, 'admins', this.data.uid))).exists();
+    } catch {
+      return false; // e.g. rules not published yet, or offline with nothing saved
+    }
+  }
+
+  async list(): Promise<DemoFeedback[]> {
+    const snap = await readDocs(query(collection(this.data.db, FEEDBACK_COLLECTION), orderBy('createdAt', 'desc'), limit(FEEDBACK_LIST_LIMIT)));
+    return snap.docs.map((d) => {
+      const { text, createdAt } = d.data() as { text: string; createdAt: Timestamp | null };
+      return { id: d.id, text, createdAt: (createdAt?.toDate() ?? new Date()).toISOString() };
+    });
+  }
+}
+
+const FEEDBACK_LIST_LIMIT = 500;
+
 class FirebaseSnapshots extends FirebaseRepository implements SnapshotRepository {
   async load(): Promise<Snapshot> {
     const [profile, habits, months] = await Promise.all([this.data.profileDoc(), this.data.habitDocs(), this.data.taskMonths()]);
@@ -430,6 +458,7 @@ export function createFirebaseBackend(settings: FirebaseSettings): Backend {
         tasks: new FirebaseTasks(data),
         snapshots: new FirebaseSnapshots(data),
         devices: new FirebaseDevices(data),
+        feedback: new FirebaseFeedback(data),
       };
     },
   };
