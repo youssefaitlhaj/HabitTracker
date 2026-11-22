@@ -19,25 +19,40 @@ export interface LocalUserDoc {
   tasks?: Task[];
 }
 
-const USERS_KEY = 'ledger.local.users';
-const docKey = (id: string) => `ledger.local.user.${id}`;
-
 export class LocalStore {
-  constructor(private readonly storage: Storage = localStorage) {}
+  /** `prefix` keeps separate stores (the demo's, the local backend's) from overwriting each other. */
+  constructor(
+    private readonly storage: Storage = localStorage,
+    private readonly prefix = 'ledger.local',
+  ) {}
+
+  private get usersKey(): string {
+    return `${this.prefix}.users`;
+  }
+
+  private docKey(id: string): string {
+    return `${this.prefix}.user.${id}`;
+  }
+
+  /** Removes every account in this store. */
+  clear(): void {
+    Object.values(this.index()).forEach((id) => this.storage.removeItem(this.docKey(id)));
+    this.storage.removeItem(this.usersKey);
+  }
 
   userIdByEmail(email: string): string | null {
     return this.index()[email.toLowerCase()] ?? null;
   }
 
   read(id: string): LocalUserDoc {
-    const raw = this.storage.getItem(docKey(id));
+    const raw = this.storage.getItem(this.docKey(id));
     if (!raw) throw new Error('Account not found.');
     return JSON.parse(raw) as LocalUserDoc;
   }
 
   write(doc: LocalUserDoc): void {
-    this.storage.setItem(docKey(doc.id), JSON.stringify(doc));
-    this.storage.setItem(USERS_KEY, JSON.stringify({ ...this.index(), [doc.email.toLowerCase()]: doc.id }));
+    this.storage.setItem(this.docKey(doc.id), JSON.stringify(doc));
+    this.storage.setItem(this.usersKey, JSON.stringify({ ...this.index(), [doc.email.toLowerCase()]: doc.id }));
   }
 
   update(id: string, change: (doc: LocalUserDoc) => LocalUserDoc): void {
@@ -47,12 +62,12 @@ export class LocalStore {
   delete(id: string): void {
     const doc = this.read(id);
     const { [doc.email.toLowerCase()]: _removed, ...rest } = this.index();
-    this.storage.setItem(USERS_KEY, JSON.stringify(rest));
-    this.storage.removeItem(docKey(id));
+    this.storage.setItem(this.usersKey, JSON.stringify(rest));
+    this.storage.removeItem(this.docKey(id));
   }
 
   private index(): Record<string, string> {
-    return JSON.parse(this.storage.getItem(USERS_KEY) ?? '{}') as Record<string, string>;
+    return JSON.parse(this.storage.getItem(this.usersKey) ?? '{}') as Record<string, string>;
   }
 }
 

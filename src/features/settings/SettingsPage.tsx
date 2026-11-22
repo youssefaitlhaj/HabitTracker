@@ -1,37 +1,55 @@
 import { type ReactNode } from 'react';
 import { NavLink, Navigate, useParams } from 'react-router-dom';
 import { LedgerView } from '@/app/shell/LedgerView';
+import { DemoLock, NotInDemoTag } from '@/features/demo/NotInDemo';
+import { useIsAdmin } from '@/state/feedback';
 import type { Ledger } from '@/state/ledger';
+import { useIsDemo } from '@/state/session';
 import { cx } from '@/ui/cx';
 import { PageHeader } from '@/ui/Display';
 import { Icon, type IconName } from '@/ui/Icon';
 import { AccountTab } from './AccountTab';
 import { DataTab } from './DataTab';
+import { AdminGate, FeedbackTab } from './FeedbackTab';
 import { NotificationsTab } from './NotificationsTab';
 import { PreferencesTab } from './PreferencesTab';
 import { ProfileTab } from './ProfileTab';
 
 /** Settings (design §8.5). Language is hidden for now. */
 
-const TABS: { id: string; label: string; icon: IconName; render: (ledger: Ledger) => ReactNode }[] = [
+interface Tab {
+  id: string;
+  label: string;
+  icon: IconName;
+  render: (ledger: Ledger) => ReactNode;
+  /** Only shown to admins (listed in Firebase › admins). */
+  adminOnly?: boolean;
+}
+
+const TABS: Tab[] = [
   { id: 'profile', label: 'Profile', icon: 'user', render: (l) => <ProfileTab ledger={l} /> },
   { id: 'preferences', label: 'Preferences', icon: 'settings', render: (l) => <PreferencesTab ledger={l} /> },
   { id: 'notifications', label: 'Notifications', icon: 'bell', render: () => <NotificationsTab /> },
   { id: 'data', label: 'Data', icon: 'download', render: (l) => <DataTab ledger={l} /> },
   { id: 'account', label: 'Account', icon: 'logout', render: () => <AccountTab /> },
+  { id: 'feedback', label: 'Demo feedback', icon: 'note', render: (l) => <FeedbackTab ledger={l} />, adminOnly: true },
 ];
 
 export function SettingsPage() {
   const { tab = 'profile' } = useParams();
+  const admin = useIsAdmin() === true;
+  const tabs = TABS.filter((t) => admin || !t.adminOnly);
   const current = TABS.find((t) => t.id === tab);
   if (!current) return <Navigate to="/settings" replace />;
+  // Wait for the admin check instead of bouncing an admin who opened the tab from a notification.
+  if (current.adminOnly && !admin) return <AdminGate />;
 
   return (
     <div className="flex flex-col gap-7">
       <PageHeader title="Settings" />
       <div className="flex flex-wrap items-start gap-7">
         <nav aria-label="Settings sections" className="flex flex-[1_1_200px] flex-wrap gap-1 desktop:max-w-[220px] desktop:flex-col">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <NavLink
               key={t.id}
               to={t.id === 'profile' ? '/settings' : `/settings/${t.id}`}
@@ -56,20 +74,34 @@ export function SettingsPage() {
   );
 }
 
+interface SettingsCardProps {
+  title: string;
+  description?: ReactNode;
+  children: ReactNode;
+  tone?: 'plain' | 'danger';
+  titleId?: string;
+  /** Needs a real account: in the demo the card is labelled "Not in the demo" and its controls are disabled. */
+  realAccountOnly?: boolean;
+}
+
 /** Card wrapper + label/hint/control row shared by all settings tabs. */
-export function SettingsCard({ title, description, children, tone = 'plain', titleId }: { title: string; description?: ReactNode; children: ReactNode; tone?: 'plain' | 'danger'; titleId?: string }) {
+export function SettingsCard({ title, description, children, tone = 'plain', titleId, realAccountOnly = false }: SettingsCardProps) {
+  const locked = useIsDemo() && realAccountOnly;
   return (
     <section
       aria-labelledby={titleId}
-      className={cx('flex flex-col gap-4 rounded-card p-5 tablet:p-6', tone === 'danger' ? 'border-[1.5px] border-error-line bg-error-soft/40' : 'card')}
+      className={cx('flex flex-col gap-4 rounded-card p-5 tablet:p-6', tone === 'danger' && !locked ? 'border-[1.5px] border-error-line bg-error-soft/40' : 'card')}
     >
       <div className="flex flex-col gap-1">
-        <h2 id={titleId} className={cx('m-0 font-display text-[22px] font-semibold', tone === 'danger' && 'text-error-ink')}>
-          {title}
-        </h2>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 id={titleId} className={cx('m-0 font-display text-[22px] font-semibold', tone === 'danger' && !locked && 'text-error-ink')}>
+            {title}
+          </h2>
+          {locked && <NotInDemoTag />}
+        </div>
         {description && <p className="m-0 text-sm leading-relaxed text-muted">{description}</p>}
       </div>
-      {children}
+      <DemoLock locked={locked}>{children}</DemoLock>
     </section>
   );
 }

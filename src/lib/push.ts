@@ -1,10 +1,9 @@
 import type { PushDevice } from '@/data/ports';
+import { SW_URL } from './serviceWorker';
 
 /** Browser side of reminder notifications: support checks, permission, subscription. */
 
 export type PushSupport = 'supported' | 'needs-install' | 'unsupported';
-
-const SW_URL = '/sw.js';
 
 function isStandalone(): boolean {
   return window.matchMedia?.('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;

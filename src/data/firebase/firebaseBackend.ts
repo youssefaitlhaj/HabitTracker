@@ -27,10 +27,11 @@ import {
   collection,
   deleteDoc,
   doc,
-  getDoc,
-  getDocs,
-  initializeFirestore,
+  limit,
+  orderBy,
+  query,
   setDoc,
+  type Timestamp,
   updateDoc,
   runTransaction,
   writeBatch,
@@ -42,6 +43,7 @@ import type {
   Backend,
   DeviceRepository,
   EmailActionService,
+  FeedbackRepository,
   PushDevice,
   CheckinRepository,
   HabitRepository,
@@ -56,6 +58,9 @@ import type {
   TaskRepository,
 } from '../ports';
 import { friendly } from './errors';
+import { FEEDBACK_COLLECTION } from './feedbackSender';
+import type { DemoFeedback } from '@/domain/feedback';
+import { FirestoreStore, isOffline, readDoc, readDocs, requireConnection, save } from './offline';
 import { checkinsOf, habitFields, notesOf, taskMonth, type DeviceDoc, type HabitDoc, type TaskMonthDoc } from './habitDoc';
 import { sha256Hex } from '@/lib/hash';
 import { detectTimeZone } from '@/domain/date';
@@ -101,7 +106,7 @@ function newProfile(name: string, timezone: string): ProfileDoc {
 class FirebaseAuthService implements AuthService {
   constructor(
     private readonly auth: Auth,
-    private readonly db: Firestore,
+    private readonly store: FirestoreStore,
   ) {}
 
   async getSession(): Promise<Session | null> {
@@ -115,7 +120,7 @@ class FirebaseAuthService implements AuthService {
 
   async signUp({ name, email, password, timezone }: SignUpInput): Promise<{ needsConfirmation: boolean }> {
     const { user } = await friendly(createUserWithEmailAndPassword(this.auth, email, password));
-    await friendly(setDoc(doc(this.db, 'users', user.uid), newProfile(name, timezone)));
+    await friendly(setDoc(doc(this.store.db, 'users', user.uid), newProfile(name, timezone)));
     await friendly(sendEmailVerification(user, continueUrl()));
     await signOut(this.auth);
     return { needsConfirmation: true };
@@ -133,6 +138,7 @@ class FirebaseAuthService implements AuthService {
 
   async signOut(): Promise<void> {
     await friendly(signOut(this.auth));
+    await this.store.wipe();
   }
 
   async requestPasswordReset(email: string): Promise<void> {
@@ -188,10 +194,14 @@ class FirebaseEmailActions implements EmailActionService {
 /** Shared paths and reads for one signed-in user. */
 class UserData {
   constructor(
-    readonly db: Firestore,
+    readonly store: FirestoreStore,
     readonly auth: Auth,
     readonly uid: string,
   ) {}
+
+  get db(): Firestore {
+    return this.store.db;
+  }
 
   get profileRef() {
     return doc(this.db, 'users', this.uid);
@@ -206,20 +216,20 @@ class UserData {
   }
 
   async taskMonths(): Promise<{ month: string; items: Task[] }[]> {
-    const snap = await friendly(getDocs(collection(this.db, 'users', this.uid, 'taskMonths')));
+    const snap = await readDocs(collection(this.db, 'users', this.uid, 'taskMonths'));
     return snap.docs.map((d) => ({ month: d.id, items: (d.data() as TaskMonthDoc).items ?? [] }));
   }
 
   async habitDocs(): Promise<HabitDoc[]> {
-    const snap = await friendly(getDocs(collection(this.db, 'users', this.uid, 'habits')));
+    const snap = await readDocs(collection(this.db, 'users', this.uid, 'habits'));
     return snap.docs.map((d) => d.data() as HabitDoc);
   }
 
   async profileDoc(): Promise<ProfileDoc> {
-    const snap = await friendly(getDoc(this.profileRef));
+    const snap = await readDoc(this.profileRef);
     if (snap.exists()) return snap.data() as ProfileDoc;
     const created = newProfile(this.auth.currentUser?.displayName ?? '', detectTimeZone());
-    await friendly(setDoc(this.profileRef, created));
+    await save(setDoc(this.profileRef, created));
     return created;
   }
 }
@@ -235,21 +245,22 @@ class FirebaseProfiles extends FirebaseRepository implements ProfileRepository {
   }
 
   async update({ onboarded, ...settings }: ProfilePatch): Promise<void> {
-    await friendly(updateDoc(this.data.profileRef, { ...settings, ...(onboarded ? { onboarded: true } : {}) }));
+    await save(updateDoc(this.data.profileRef, { ...settings, ...(onboarded ? { onboarded: true } : {}) }));
   }
 
   async setAvatar(file: File | null): Promise<void> {
-    await friendly(updateDoc(this.data.profileRef, { avatarUrl: file ? await avatarDataUrl(file) : null }));
+    await save(updateDoc(this.data.profileRef, { avatarUrl: file ? await avatarDataUrl(file) : null }));
   }
 
   async markExported(at: string): Promise<void> {
-    await friendly(updateDoc(this.data.profileRef, { lastExportAt: at }));
+    await save(updateDoc(this.data.profileRef, { lastExportAt: at }));
   }
 
   /** Free Firebase has no scheduled jobs, so deletion happens at once (capabilities.deletionGraceDays = 0). */
   async requestDeletion(): Promise<void> {
     const user = this.data.auth.currentUser;
     if (!user) throw new Error('You are signed out. Log in and try again.');
+    requireConnection();
     const lastLogin = Date.parse(user.metadata.lastSignInTime ?? '');
     if (!(Date.now() - lastLogin < RECENT_LOGIN_MS)) {
       throw new Error('For your security, log out and log in again, then delete your account within 5 minutes.');
@@ -260,6 +271,7 @@ class FirebaseProfiles extends FirebaseRepository implements ProfileRepository {
     batch.delete(this.data.profileRef);
     await friendly(batch.commit());
     await friendly(deleteUser(user));
+    await this.data.store.wipe();
   }
 
   async cancelDeletion(): Promise<boolean> {
@@ -273,17 +285,17 @@ class FirebaseHabits extends FirebaseRepository implements HabitRepository {
   }
 
   async save(habit: Habit): Promise<void> {
-    await friendly(setDoc(this.data.habitRef(habit.id), habitFields(habit), { merge: true }));
+    await save(setDoc(this.data.habitRef(habit.id), habitFields(habit), { merge: true }));
   }
 
   async remove(id: string): Promise<void> {
-    await friendly(deleteDoc(this.data.habitRef(id)));
+    await save(deleteDoc(this.data.habitRef(id)));
   }
 
   async reorder(ids: string[]): Promise<void> {
     const batch = writeBatch(this.data.db);
     ids.forEach((id, order) => batch.update(this.data.habitRef(id), { order }));
-    await friendly(batch.commit());
+    await save(batch.commit());
   }
 }
 
@@ -293,7 +305,7 @@ class FirebaseCheckins extends FirebaseRepository implements CheckinRepository {
   }
 
   async set({ habitId, date }: Checkin, done: boolean): Promise<void> {
-    await friendly(updateDoc(this.data.habitRef(habitId), { checkins: done ? arrayUnion(date) : arrayRemove(date) }));
+    await save(updateDoc(this.data.habitRef(habitId), { checkins: done ? arrayUnion(date) : arrayRemove(date) }));
   }
 }
 
@@ -303,13 +315,13 @@ class FirebaseNotes extends FirebaseRepository implements NoteRepository {
   }
 
   async add({ habitId, ...note }: Note): Promise<void> {
-    await friendly(updateDoc(this.data.habitRef(habitId), { notes: arrayUnion(note) }));
+    await save(updateDoc(this.data.habitRef(habitId), { notes: arrayUnion(note) }));
   }
 
   async remove(id: string): Promise<void> {
     for (const h of await this.data.habitDocs()) {
       const note = (h.notes ?? []).find((n) => n.id === id);
-      if (note) return void (await friendly(updateDoc(this.data.habitRef(h.id), { notes: arrayRemove(note) })));
+      if (note) return void (await save(updateDoc(this.data.habitRef(h.id), { notes: arrayRemove(note) })));
     }
   }
 }
@@ -327,15 +339,19 @@ class FirebaseTasks extends FirebaseRepository implements TaskRepository {
     return this.updateMonth(task, (items) => items.filter((t) => t.id !== task.id));
   }
 
-  /** The month document already holding this task, or the one a new task goes into. */
-  private async monthOf(task: Task): Promise<string> {
-    const months = await this.data.taskMonths();
-    return months.find((m) => m.items.some((t) => t.id === task.id))?.month ?? taskMonth(task);
-  }
-
-  /** Read-modify-write of one month in a transaction, so two quick changes never overwrite each other. */
+  /**
+   * Read-modify-write of the month holding the task (or the one a new task goes into). Online it
+   * runs in a transaction, so two quick changes never overwrite each other. Transactions need the
+   * server, so offline it changes this device's copy, which Firestore syncs later.
+   */
   private async updateMonth(task: Task, change: (items: Task[]) => Task[]): Promise<void> {
-    const ref = this.data.taskMonthRef(await this.monthOf(task));
+    const months = await this.data.taskMonths();
+    const month = months.find((m) => m.items.some((t) => t.id === task.id))?.month ?? taskMonth(task);
+    const ref = this.data.taskMonthRef(month);
+    if (isOffline()) {
+      const items = months.find((m) => m.month === month)?.items ?? [];
+      return save(setDoc(ref, { items: change(items) } satisfies TaskMonthDoc));
+    }
     return friendly(
       runTransaction(this.data.db, async (tx) => {
         const snap = await tx.get(ref);
@@ -352,14 +368,37 @@ class FirebaseDevices extends FirebaseRepository implements DeviceRepository {
   }
 
   async register(device: PushDevice): Promise<void> {
+    requireConnection();
     const docData: DeviceDoc = { subscription: device, userAgent: navigator.userAgent, createdAt: nowIso() };
     await friendly(setDoc(await this.ref(device.endpoint), docData));
   }
 
   async unregister(endpoint: string): Promise<void> {
+    requireConnection();
     await friendly(deleteDoc(await this.ref(endpoint)));
   }
 }
+
+/** Admins are listed by hand in the console (admins/{uid}); the rules let only them read feedback. */
+class FirebaseFeedback extends FirebaseRepository implements FeedbackRepository {
+  async isAdmin(): Promise<boolean> {
+    try {
+      return (await readDoc(doc(this.data.db, 'admins', this.data.uid))).exists();
+    } catch {
+      return false; // e.g. rules not published yet, or offline with nothing saved
+    }
+  }
+
+  async list(): Promise<DemoFeedback[]> {
+    const snap = await readDocs(query(collection(this.data.db, FEEDBACK_COLLECTION), orderBy('createdAt', 'desc'), limit(FEEDBACK_LIST_LIMIT)));
+    return snap.docs.map((d) => {
+      const { text, createdAt } = d.data() as { text: string; createdAt: Timestamp | null };
+      return { id: d.id, text, createdAt: (createdAt?.toDate() ?? new Date()).toISOString() };
+    });
+  }
+}
+
+const FEEDBACK_LIST_LIMIT = 500;
 
 class FirebaseSnapshots extends FirebaseRepository implements SnapshotRepository {
   async load(): Promise<Snapshot> {
@@ -376,6 +415,7 @@ class FirebaseSnapshots extends FirebaseRepository implements SnapshotRepository
 
   /** One atomic batch: everything is replaced, or nothing changes. */
   async replace(snapshot: Snapshot): Promise<void> {
+    requireConnection();
     const [existing, existingMonths] = await Promise.all([this.data.habitDocs(), this.data.taskMonths()]);
     const months = new Map<string, Task[]>();
     for (const task of snapshot.tasks) months.set(taskMonth(task), [...(months.get(taskMonth(task)) ?? []), task]);
@@ -401,14 +441,15 @@ class FirebaseSnapshots extends FirebaseRepository implements SnapshotRepository
 export function createFirebaseBackend(settings: FirebaseSettings): Backend {
   const app = initializeApp(settings);
   const auth = getAuth(app);
-  const db = initializeFirestore(app, { ignoreUndefinedProperties: true });
+  // Its on-device copy lets the installed app open and record check-ins without a connection.
+  const store = new FirestoreStore(app);
   return {
     kind: 'firebase',
     capabilities: { globalSignOut: false, deletionGraceDays: 0 },
-    auth: new FirebaseAuthService(auth, db),
+    auth: new FirebaseAuthService(auth, store),
     emailActions: new FirebaseEmailActions(auth),
     repositoriesFor(session: Session): Repositories {
-      const data = new UserData(db, auth, session.userId);
+      const data = new UserData(store, auth, session.userId);
       return {
         profiles: new FirebaseProfiles(data),
         habits: new FirebaseHabits(data),
@@ -417,6 +458,7 @@ export function createFirebaseBackend(settings: FirebaseSettings): Backend {
         tasks: new FirebaseTasks(data),
         snapshots: new FirebaseSnapshots(data),
         devices: new FirebaseDevices(data),
+        feedback: new FirebaseFeedback(data),
       };
     },
   };

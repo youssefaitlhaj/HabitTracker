@@ -1,6 +1,7 @@
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { DEMO_PATH } from '@/data/demo/demoMode';
 import type { Backend } from '@/data/ports';
 import { AuthActionPage } from '@/features/auth/AuthActionPage';
 import { LoginPage, ResetPasswordPage, SignupPage, UpdatePasswordPage } from '@/features/auth/AuthPages';
@@ -26,7 +27,12 @@ export function App({ backend }: { backend: Backend }) {
         queryCache: new QueryCache({
           onError: (error, query) => console.error(`[Ledger] Couldn’t load ${String(query.queryKey[2] ?? query.queryKey[0])}:`, error),
         }),
-        defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+        // 'always': the data layer handles being offline itself (Firestore's on-device copy),
+        // so React Query mustn't pause loading and saving while there's no connection.
+        defaultOptions: {
+          queries: { staleTime: 30_000, retry: 1, networkMode: 'always' },
+          mutations: { networkMode: 'always' },
+        },
       }),
   );
   return (
@@ -44,6 +50,8 @@ export function App({ backend }: { backend: Backend }) {
                 <Route path="/auth/action" element={<AuthActionPage />} />
                 <Route path="/privacy" element={<LegalPage kind="privacy" />} />
                 <Route path="/terms" element={<LegalPage kind="terms" />} />
+                {/* main.tsx has already switched this tab to the sample-data demo; start on Today. */}
+                <Route path={DEMO_PATH} element={<Navigate to="/" replace />} />
                 <Route path="/welcome" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
                 <Route element={<RequireAuth><FirstRunGate><AppShell /></FirstRunGate></RequireAuth>}>
                   <Route index element={<TodayPage />} />

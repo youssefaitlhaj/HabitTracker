@@ -4,6 +4,8 @@ A habit tracker for desktop, tablet and phone: check habits off in a tap, keep s
 
 Design: [`docs/superpowers/specs/2026-11-10-ledger-habit-tracker-design.md`](docs/superpowers/specs/2026-11-10-ledger-habit-tracker-design.md) · Logo: [`docs/brand/`](docs/brand)
 
+Preview (the `preview` branch, behind Vercel login): [habittracker-git-preview-youssefaitlhajs-projects.vercel.app](https://habittracker-git-preview-youssefaitlhajs-projects.vercel.app) · its demo: [/demo](https://habittracker-git-preview-youssefaitlhajs-projects.vercel.app/demo)
+
 ## Run it
 
 ```bash
@@ -32,7 +34,9 @@ Firebase sends the confirmation and password-reset emails itself, so no separate
 
 ### Reminder notifications (Firebase + GitHub Actions, free)
 
-A GitHub Actions job (`.github/workflows/reminders.yml`) runs `scripts/send-reminders.ts` every 5 minutes. It sends a push notification for each habit whose reminder time has come and that isn't done yet. GitHub can start scheduled runs a few minutes late.
+A GitHub Actions job (`.github/workflows/reminders.yml`) runs `scripts/send-reminders.ts`. It sends a push notification for each habit whose reminder time has come and that isn't done yet, and for each open task whose date is today and whose time has come.
+
+GitHub's own schedule (`*/5 * * * *`) is only a fallback: on free accounts GitHub skips most of those runs, often for hours. The reliable trigger is a free external cron (cron-job.org) that starts the workflow every 5 minutes through GitHub's API (step 7).
 
 1. Create VAPID keys once with `npx web-push generate-vapid-keys`.
 2. **Vercel › Environment Variables**: add `VITE_VAPID_PUBLIC_KEY` (the public key, visibility "Config"), then redeploy.
@@ -40,8 +44,29 @@ A GitHub Actions job (`.github/workflows/reminders.yml`) runs `scripts/send-remi
 4. **GitHub › Settings › Secrets and variables › Actions**: add `FIREBASE_SERVICE_ACCOUNT` (the whole JSON), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (`mailto:` plus your email).
 5. **GitHub › Actions › Habit reminders › Run workflow** once to check it runs.
 6. In Ledger, go to **Settings › Notifications** and turn reminders on for each device. On iPhone, add Ledger to the Home Screen first.
+7. Reliable 5-minute trigger:
+   - **GitHub › Settings › Developer settings › Fine-grained tokens › Generate new token**: repository access *Only select repositories* → this repo; permission **Actions: Read and write**. Copy the token.
+   - **cron-job.org** (free account) › Create cronjob: URL `https://api.github.com/repos/<owner>/<repo>/actions/workflows/reminders.yml/dispatches`, schedule every 5 minutes. Under *Advanced*: method **POST**; headers `Accept: application/vnd.github+json`, `Authorization: Bearer <token>`, `X-GitHub-Api-Version: 2022-11-28`; request body `{"ref":"main"}`.
+   - A successful call returns **204**, and a "workflow_dispatch" run appears under **GitHub › Actions › Habit reminders** within a minute.
 
-GitHub pauses scheduled workflows after 60 days without commits; re-enable them from the Actions tab if that happens.
+GitHub pauses scheduled workflows after 60 days without commits; re-enable them from the Actions tab if that happens (runs started from cron-job.org are not affected). Each run's log lists, per account, the number of devices and how many reminders were due (nothing personal: the log is public), which helps when one doesn't arrive.
+
+### Offline use
+
+Installed on a phone (Add to Home Screen), Ledger opens and works without a connection: the service worker (`public/sw.js`) keeps the app's files, whose list the build writes into `dist/sw.js`, and Firestore keeps a copy of the data on the device. Changes made offline sync when the connection is back. Logging out removes the offline copy from the device (changes not yet synced are lost, so log out online). Importing, deleting the account and turning reminders on or off need a connection.
+
+### Demo for visitors (`/demo`)
+
+Send people `<your site>/demo` (or they click **Try the demo** on the log-in page) to try Ledger without an account. It opens on Today, signed in as a sample user with about four months of history: habits with streaks, a quieter fortnight, an archived habit, notes, and tasks that are done, due today, overdue, upcoming and undated (`src/data/demo/demoData.ts`, dated relative to today). Nothing reaches Firebase: the data lives in that browser tab, survives reloads, and is gone when the tab closes, on **Start over** or **Exit demo**. Features that need a real account are labelled "Not in the demo" and disabled: password, email change, account deletion and reminders.
+
+**Feedback.** On **Exit demo**, visitors are asked what they thought (skipping is one click). Only the text and the server's time are saved, in Firestore `demoFeedback`; there's no name, email or device information. Anyone can add an entry (1–1000 characters), only admins can read it, and nobody can edit or delete it from the app (delete spam in the Firebase console). Without Firebase keys in the build (e.g. a Vercel environment without them), Exit demo just leaves.
+
+To read it and be notified:
+
+1. Publish the latest `firestore.rules` (Firebase › Firestore Database › Rules).
+2. Make yourself an admin: copy your **User UID** from Firebase › Authentication › Users, then in Firestore › **Start collection** `admins` › Document ID = that UID (no fields needed). Repeat for each admin.
+3. Read it in Ledger under **Settings › Demo feedback** (only admins see this tab).
+4. Notifications: turn reminders on for your devices (Settings › Notifications). The reminder job sends each admin device "New demo feedback" once per message, so it arrives as quickly as the job runs (every 5 minutes with the cron-job.org trigger above).
 
 ### Supabase (alternative)
 

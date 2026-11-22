@@ -4,12 +4,13 @@ import { emailError, requiredError } from '@/domain/validation';
 import { useProfileUpdate } from '@/state/actions';
 import type { Ledger } from '@/state/ledger';
 import { errorText, useRefreshLedger } from '@/state/mutations';
-import { useBackend, useRepos } from '@/state/session';
+import { useBackend, useIsDemo, useRepos } from '@/state/session';
 import { useForm } from '@/state/useForm';
 import { Button } from '@/ui/Button';
 import { Avatar } from '@/ui/Display';
 import { Field, Select, TextInput } from '@/ui/Field';
 import { useToast } from '@/ui/Toast';
+import { NotInDemoTag } from '@/features/demo/NotInDemo';
 import { SettingsCard } from './SettingsPage';
 
 function timeZones(current: string): string[] {
@@ -20,6 +21,7 @@ function timeZones(current: string): string[] {
 export function ProfileTab({ ledger }: { ledger: Ledger }) {
   const { profile } = ledger;
   const { auth } = useBackend();
+  const demo = useIsDemo();
   const update = useProfileUpdate();
   const toast = useToast();
   const initial = { name: profile.name, email: profile.email, timezone: profile.timezone };
@@ -47,8 +49,8 @@ export function ProfileTab({ ledger }: { ledger: Ledger }) {
           <Field label="Display name" error={form.errors.name}>
             {(c) => <TextInput id={c.id} aria-describedby={c.describedBy} invalid={c.invalid} maxLength={80} value={form.values.name} onChange={(e) => form.set('name')(e.target.value)} />}
           </Field>
-          <Field label="Email" error={form.errors.email}>
-            {(c) => <TextInput id={c.id} aria-describedby={c.describedBy} invalid={c.invalid} type="email" value={form.values.email} onChange={(e) => form.set('email')(e.target.value)} />}
+          <Field label="Email" error={form.errors.email} aside={demo ? <NotInDemoTag /> : undefined}>
+            {(c) => <TextInput id={c.id} aria-describedby={c.describedBy} invalid={c.invalid} type="email" disabled={demo} value={form.values.email} onChange={(e) => form.set('email')(e.target.value)} />}
           </Field>
           <Field label="Time zone" hint="“Today” follows this time zone.">
             {(c) => (
