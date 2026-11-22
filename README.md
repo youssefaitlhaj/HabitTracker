@@ -4,6 +4,8 @@ A habit tracker for desktop, tablet and phone: check habits off in a tap, keep s
 
 Design: [`docs/superpowers/specs/2026-11-10-ledger-habit-tracker-design.md`](docs/superpowers/specs/2026-11-10-ledger-habit-tracker-design.md) · Logo: [`docs/brand/`](docs/brand)
 
+Preview (the `preview` branch, behind Vercel login): [habittracker-git-preview-youssefaitlhajs-projects.vercel.app](https://habittracker-git-preview-youssefaitlhajs-projects.vercel.app) · its demo: [/demo](https://habittracker-git-preview-youssefaitlhajs-projects.vercel.app/demo)
+
 ## Run it
 
 ```bash
